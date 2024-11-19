@@ -102,7 +102,7 @@ class HaloPSAAuth {
     await chrome.storage.local.remove(["auth_token"]);
 
     const { apiUrl } = await this.getConfig();
-    const logoutUrl = `${apiUrl}/oauth/logout`;
+    const logoutUrl = `${apiUrl}/auth/logout`;
 
     try {
       await chrome.identity.launchWebAuthFlow({

@@ -59,8 +59,20 @@ function OptionsPage() {
     }
   };
   const handleLogin = async () => {
-    await HaloPSAAuth.authenticate();
-    setStatus("Login successful!");
+    try {
+      const token = await HaloPSAAuth.authenticate();
+      if (token) {
+        setStatus("Login successful!");
+        
+        // Clear status message after 2 seconds
+        setTimeout(() => setStatus(""), 2000);
+      } else {
+        setStatus("Login failed: No token received");
+      }
+    } catch (error) {
+      setStatus(`Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("Login error:", error);
+    }
   };
   /// const handleLogout = async () => {
   /// await HaloPSAAuth.logout();
