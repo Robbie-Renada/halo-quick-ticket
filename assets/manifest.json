@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Quick Task Creator",
+  "version": "1.0",
+  "description": "Quickly create internal tasks in HaloPSA",
+  "permissions": ["storage", "commands", "identity"],
+  "host_permissions": ["*://*/*"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+T",
+        "mac": "Command+Shift+T"
+      },
+      "description": "Open Quick Task Creator"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
+}

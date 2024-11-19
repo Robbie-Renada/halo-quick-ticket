@@ -1,0 +1,180 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Quick Task Creator Settings</title>
+    <style>
+      body {
+        padding: 20px;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+      }
+      .info {
+        background-color: #f0f0f0;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+      button {
+        padding: 8px 16px;
+        background-color: #0066cc;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0052a3;
+      }
+      .success {
+        color: green;
+        margin-top: 10px;
+      }
+      .error {
+        color: red;
+        margin-top: 10px;
+      }
+      .redirect-url {
+        background: #f5f5f5;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        word-break: break-all;
+        font-family: monospace;
+      }
+      .copy-button {
+        background: #666;
+        color: white;
+        padding: 4px 8px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        margin-left: 5px;
+      }
+      .copy-button:hover {
+        background: #555;
+      }
+      .button-group {
+        margin: 20px 0;
+        display: flex;
+        gap: 10px;
+      }
+
+      .primary-button {
+        background-color: #0066cc;
+        color: white;
+      }
+
+      .secondary-button {
+        background-color: #f0f0f0;
+        color: #333;
+      }
+
+      .button-group button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .button-group button:hover {
+        opacity: 0.9;
+      }
+
+      #loginStatus {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 4px;
+      }
+
+      #loginStatus.success {
+        background-color: #e6ffe6;
+        color: #006600;
+      }
+
+      #loginStatus.error {
+        background-color: #ffe6e6;
+        color: #cc0000;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Quick Task Creator Settings</h2>
+
+    <div class="info">
+      <p>
+        Configure your HaloPSA instance URL and client ID. You'll be prompted to
+        login with your HaloPSA credentials when using the extension.
+      </p>
+    </div>
+
+    <div class="form-group">
+      <label for="apiUrl">HaloPSA Base URL:</label>
+      <input
+        type="url"
+        id="apiUrl"
+        placeholder="https://your-instance.halopsa.com"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="clientId">Client ID:</label>
+      <input type="text" id="clientId" required />
+      <small style="color: #666; display: block; margin-top: 4px"
+        >Found in HaloPSA under Setup > Integration > Applications</small
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="userId">Default User ID:</label>
+      <input type="number" id="userId" required />
+      <small style="color: #666; display: block; margin-top: 4px"
+        >The user ID that tasks will be created for</small
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="ticketTypeId">Ticket Type ID:</label>
+      <input type="number" id="ticketTypeId" required />
+      <small style="color: #666; display: block; margin-top: 4px"
+        >The ID of the ticket type to use (e.g., Task)</small
+      >
+    </div>
+
+    <div class="form-group">
+      <label>Redirect URI (required for HaloPSA setup):</label>
+      <div class="redirect-url">
+        <span id="redirectUri"></span>
+        <button class="copy-button" id="copyRedirect">Copy</button>
+      </div>
+      <small style="color: #666; display: block; margin-top: 4px">
+        Copy this URL to the "Login Redirect URL" field in your HaloPSA
+        application settings
+      </small>
+    </div>
+
+    <div class="button-group">
+      <button id="save" class="primary-button">Save Settings</button>
+      <button id="testLogin" class="secondary-button">Test Login</button>
+      <button id="signOut" class="secondary-button">Sign Out</button>
+    </div>
+
+    <div id="loginStatus"></div>
+    <div id="status"></div>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
