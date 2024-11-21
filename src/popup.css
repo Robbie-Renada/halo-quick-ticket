@@ -2,4 +2,7 @@ body {
   width: 360px;
   margin: 0;
   padding: 12px;
+  height: fit-content;
+  min-height: 200px;
+  max-height: 600px;
 }

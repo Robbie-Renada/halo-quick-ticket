@@ -7,6 +7,11 @@ interface FormData {
   projecttimebudget: string;
   startDate: string;
   targetDate: string;
+  category_1: string;
+  category_2: string;
+  category_3: string;
+  category_4: string;
+  priority_id: string;
 }
 
 interface TicketPayload {
@@ -18,6 +23,11 @@ interface TicketPayload {
   startDate?: string;
   targetDate?: string;
   _novalidate: boolean;
+  category_1: string;
+  category_2: string;
+  category_3: string;
+  category_4: string;
+  priority_id: string;
 }
 
 interface TicketResponse {
@@ -28,6 +38,17 @@ interface LastTicket {
   id: number;
   url: string;
 }
+
+interface Category {
+  guid: string;
+  id: number;
+  value: string;
+  category_name: string;
+  type_id: number;
+  category_group_id: number;
+}
+
+
 
 function TicketForm() {
   const formatDate = (date: Date): string => {
@@ -53,6 +74,11 @@ function TicketForm() {
     projecttimebudget: formatTime(budgettime),
     startDate: formatDate(new Date()),
     targetDate: formatDate(tomorrow),
+    category_1: "",
+    category_2: "",
+    category_3: "",
+    category_4: "",
+    priority_id: "",
   });
   const [status, setStatus] = useState<{
     message: string;
@@ -70,7 +96,22 @@ function TicketForm() {
     showStartDate: true,
     showTargetDate: true,
     showprojecttimebudget: true,
+    showCategory1: true,
+    showCategory2: true,
+    showCategory3: true,
+    showCategory4: true,
+    showPriority: true,
   });
+
+  const [categories, setCategories] = useState<Record<number, { value: string; label: string }[]>>({});
+
+  // Add this constant for priority options
+  const PRIORITY_OPTIONS = [
+    { value: "1", label: "Critical" },
+    { value: "2", label: "High" },
+    { value: "3", label: "Medium" },
+    { value: "4", label: "Low" },
+  ];
 
   // Load saved form data on mount
   useEffect(() => {
@@ -82,6 +123,11 @@ function TicketForm() {
           "showStartDate",
           "showTargetDate",
           "showprojecttimebudget",
+          "showCategory1",
+          "showCategory2",
+          "showCategory3",
+          "showCategory4",
+          "showPriority",
         ]),
       ]);
 
@@ -100,6 +146,11 @@ function TicketForm() {
         showStartDate: settings.showStartDate ?? true,
         showTargetDate: settings.showTargetDate ?? true,
         showprojecttimebudget: settings.showprojecttimebudget ?? true,
+        showCategory1: settings.showCategory1 ?? true,
+        showCategory2: settings.showCategory2 ?? true,
+        showCategory3: settings.showCategory3 ?? true,
+        showCategory4: settings.showCategory4 ?? true,
+        showPriority: settings.showPriority ?? true,
       });
     };
     loadSavedData();
@@ -210,6 +261,11 @@ function TicketForm() {
             }),
             {},
           ),
+        category_1: formData.category_1,
+        category_2: formData.category_2,
+        category_3: formData.category_3,
+        category_4: formData.category_4,
+        priority_id: formData.priority_id,
       };
 
       const response = await fetch(`${settings.apiUrl}api/tickets`, {
@@ -246,6 +302,11 @@ function TicketForm() {
           projecttimebudget: formatTime(budgettime),
           startDate: formatDate(new Date()),
           targetDate: formatDate(tomorrow),
+          category_1: "",
+          category_2: "", 
+          category_3: "",
+          category_4: "",
+          priority_id: "",
         });
         setButtonText("Submit");
       }, 2000);
@@ -258,11 +319,107 @@ function TicketForm() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const token = await HaloPSAAuth.getAuthToken();
+      const settings = await chrome.storage.sync.get(["apiUrl"]);
+      
+      if (!token || !settings.apiUrl) {
+        console.error("Missing token or API URL");
+        return;
+      }
+
+      const response = await fetch(`${settings.apiUrl}/api/Category`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: Category[] = await response.json();
+      
+      // Organize categories by type_id
+      const organizedCategories: Record<number, { value: string; label: string }[]> = {};
+      
+      data.forEach((category) => {
+        if (!organizedCategories[category.type_id]) {
+          organizedCategories[category.type_id] = [];
+        }
+        
+        const parts = category.category_name.split('>').map(part => part.trim());
+        
+        // Add each level of the hierarchy as a separate option
+        let currentPath = '';
+        parts.forEach((part, index) => {
+          currentPath = index === 0 ? part : `${currentPath} > ${part}`;
+          
+          // Only add if this exact path isn't already in the options
+          if (!organizedCategories[category.type_id].some(opt => opt.value === currentPath)) {
+            organizedCategories[category.type_id].push({
+              value: currentPath,
+              label: currentPath
+            });
+          }
+        });
+      });
+
+      // Sort options alphabetically within each type
+      Object.values(organizedCategories).forEach(options => {
+        options.sort((a, b) => a.label.localeCompare(b.label));
+      });
+
+      setCategories(organizedCategories);
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const CategorySelect = ({ 
+    typeId, 
+    value, 
+    onChange, 
+    label 
+  }: { 
+    typeId: number;
+    value: string;
+    onChange: (value: string) => void;
+    label: string;
+  }) => {
+    const options = categories[typeId] || [];
+    
+    return (
+      <div>
+        <label className="block text-gray-700 text-xs font-medium mb-1">
+          {label}
+        </label>
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-xs"
+        >
+          <option value="">Select {label}</option>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full bg-white rounded-md shadow-md text-sm">
-      <form onSubmit={handleSubmit} className="flex flex-col space-y-4 p-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-lg font-semibold mb-0">Create a ticket</h1>
+      <form onSubmit={handleSubmit} className="flex flex-col space-y-2 p-2">
+        <div className="flex justify-between items-center mb-1">
+          <h1 className="text-base font-semibold">Create a ticket</h1>
           {lastTicket && (
             <a
               href={lastTicket.url}
@@ -271,7 +428,7 @@ function TicketForm() {
               className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
             >
               <svg
-                className="w-4 h-4"
+                className="w-3 h-3"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -298,7 +455,7 @@ function TicketForm() {
             type="text"
             tabIndex={1}
             id="summary"
-            className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
+            className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs py-1"
             placeholder="Brief Task Description"
             value={formData.summary}
             onChange={(e) =>
@@ -306,7 +463,7 @@ function TicketForm() {
             }
           />
         </div>
-        <div>
+        <div className="flex-grow">
           <label
             htmlFor="details"
             className="block text-gray-700 text-xs font-bold pb-1"
@@ -316,7 +473,7 @@ function TicketForm() {
           <textarea
             tabIndex={2}
             id="details"
-            className="max-h-40 w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
+            className="h-full min-h-[90px] w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs py-1"
             placeholder="Additional Task Information"
             value={formData.details}
             onChange={(e) =>
@@ -349,7 +506,7 @@ function TicketForm() {
                 }));
               }}
             />
-            <div className="w-full flex pt-1 gap-2">
+            <div className="w-full flex pt-0.5 gap-1">
               <button
                 type="button"
                 className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
@@ -393,7 +550,7 @@ function TicketForm() {
               }
               className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
             />
-            <div className="w-full flex pt-1 gap-2">
+            <div className="w-full flex pt-0.5 gap-1">
               <button
                 type="button"
                 className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
@@ -430,7 +587,7 @@ function TicketForm() {
               }
               className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
             />
-            <div className="w-full flex pt-1 gap-2">
+            <div className="w-full flex pt-0.5 gap-1">
               <button
                 type="button"
                 className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
@@ -456,6 +613,61 @@ function TicketForm() {
           </div>
         )}
 
+        {formSettings.showPriority && (
+          <div>
+            <label className="block text-gray-700 text-xs font-bold pb-1">
+              Priority
+            </label>
+            <select
+              value={formData.priority_id}
+              onChange={(e) => setFormData(prev => ({ ...prev, priority_id: e.target.value }))}
+              className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-xs"
+            >
+              <option value="">Select Priority</option>
+              {PRIORITY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          {formSettings.showCategory1 && (
+            <CategorySelect
+              typeId={1}
+              value={formData.category_1}
+              onChange={(value) => setFormData(prev => ({ ...prev, category_1: value }))}
+              label="Category 1"
+            />
+          )}
+          {formSettings.showCategory2 && (
+            <CategorySelect
+              typeId={2}
+              value={formData.category_2}
+              onChange={(value) => setFormData(prev => ({ ...prev, category_2: value }))}
+              label="Category 2"
+            />
+          )}
+          {formSettings.showCategory3 && (
+            <CategorySelect
+              typeId={3}
+              value={formData.category_3}
+              onChange={(value) => setFormData(prev => ({ ...prev, category_3: value }))}
+              label="Category 3"
+            />
+          )}
+          {formSettings.showCategory4 && (
+            <CategorySelect
+              typeId={4}
+              value={formData.category_4}
+              onChange={(value) => setFormData(prev => ({ ...prev, category_4: value }))}
+              label="Category 4"
+            />
+          )}
+        </div>
+
         <button
           type="submit"
           tabIndex={6}
@@ -466,7 +678,7 @@ function TicketForm() {
               : buttonText === "Submitting..."
                 ? "bg-gray-500"
                 : "bg-blue-500 hover:bg-blue-600"
-          } text-white px-4 py-2 rounded-md shadow-sm mt-2 transition-colors duration-200`}
+          } text-white px-4 py-1.5 rounded-md shadow-sm mt-1 transition-colors duration-200`}
         >
           {buttonText}
         </button>
