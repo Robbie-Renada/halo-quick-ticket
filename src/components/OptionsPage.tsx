@@ -6,6 +6,9 @@ interface HaloSettings {
   clientId: string;
   userId: string;
   ticketTypeId: string;
+  showStartDate: boolean;
+  showTargetDate: boolean;
+  showTimeBudget: boolean;
 }
 
 function OptionsPage() {
@@ -14,6 +17,9 @@ function OptionsPage() {
     clientId: "",
     userId: "",
     ticketTypeId: "",
+    showStartDate: true,
+    showTargetDate: true,
+    showTimeBudget: true,
   });
   const [status, setStatus] = useState<string>("");
 
@@ -31,6 +37,9 @@ function OptionsPage() {
         "clientId",
         "userId",
         "ticketTypeId",
+        "showStartDate",
+        "showTargetDate",
+        "showTimeBudget",
       ]);
 
       setSettings({
@@ -38,6 +47,9 @@ function OptionsPage() {
         clientId: result.clientId || "",
         userId: result.userId || "",
         ticketTypeId: result.ticketTypeId || "",
+        showStartDate: result.showStartDate ?? true,
+        showTargetDate: result.showTargetDate ?? true,
+        showTimeBudget: result.showTimeBudget ?? true,
       });
     } catch (error) {
       setStatus("Error loading settings");
@@ -47,7 +59,22 @@ function OptionsPage() {
 
   const handleSave = async () => {
     try {
-      await chrome.storage.sync.set(settings);
+      const settingsToSave = {
+        ...settings,
+        apiUrl:
+          settings.apiUrl && settings.apiUrl.trim()
+            ? (() => {
+                const urlMatch = settings.apiUrl.match(/^(https?:\/\/[^\/]+)/);
+                const normalizedUrl = urlMatch ? urlMatch[1] : settings.apiUrl;
+                return normalizedUrl.endsWith("/")
+                  ? normalizedUrl
+                  : `${normalizedUrl}/`;
+              })()
+            : "",
+      };
+
+      await chrome.storage.sync.set(settingsToSave);
+      setSettings(settingsToSave);
       setStatus("Settings saved successfully!");
       setTimeout(() => setStatus(""), 2000);
     } catch (error) {
@@ -65,7 +92,9 @@ function OptionsPage() {
         setStatus("Login failed: No token received");
       }
     } catch (error) {
-      setStatus(`Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setStatus(
+        `Login failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       console.error("Login error:", error);
     }
   };
@@ -88,9 +117,19 @@ function OptionsPage() {
     }));
   };
 
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setSettings((prev) => ({
+      ...prev,
+      [name]: checked,
+    }));
+  };
+
   return (
     <div className="p-8 mx-auto max-w-screen-md space-y-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800">Quick Ticket Settings</h1>
+      <h1 className="text-2xl font-bold text-gray-800">
+        Quick Ticket Settings
+      </h1>
 
       {/* Redirect URI Section */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -183,6 +222,59 @@ function OptionsPage() {
             className="w-full border-gray-300 rounded-md shadow-sm"
           />
         </div>
+
+        <h2 className="text-lg font-semibold text-gray-800">Form Fields</h2>
+        <div className="space-y-2">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="showStartDate"
+              name="showStartDate"
+              checked={settings.showStartDate}
+              onChange={handleCheckboxChange}
+              className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+            />
+            <label
+              htmlFor="showStartDate"
+              className="ml-2 text-sm text-gray-700"
+            >
+              Show Start Date
+            </label>
+          </div>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="showTargetDate"
+              name="showTargetDate"
+              checked={settings.showTargetDate}
+              onChange={handleCheckboxChange}
+              className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+            />
+            <label
+              htmlFor="showTargetDate"
+              className="ml-2 text-sm text-gray-700"
+            >
+              Show Target Date
+            </label>
+          </div>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="showTimeBudget"
+              name="showTimeBudget"
+              checked={settings.showTimeBudget}
+              onChange={handleCheckboxChange}
+              className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+            />
+            <label
+              htmlFor="showTimeBudget"
+              className="ml-2 text-sm text-gray-700"
+            >
+              Show Time Budget
+            </label>
+          </div>
+        </div>
+
         {/* Buttons Section */}
         <div className="flex justify-between space-x-4 mt-6">
           <button
