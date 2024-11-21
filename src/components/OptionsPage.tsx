@@ -21,7 +21,6 @@ function OptionsPage() {
   const redirectUri = `https://${extensionId}.chromiumapp.org/`;
 
   useEffect(() => {
-    // Load saved settings when component mounts
     loadSettings();
   }, []);
 
@@ -50,8 +49,6 @@ function OptionsPage() {
     try {
       await chrome.storage.sync.set(settings);
       setStatus("Settings saved successfully!");
-
-      // Clear status message after 2 seconds
       setTimeout(() => setStatus(""), 2000);
     } catch (error) {
       setStatus("Error saving settings");
@@ -63,8 +60,6 @@ function OptionsPage() {
       const token = await HaloPSAAuth.authenticate();
       if (token) {
         setStatus("Login successful!");
-        
-        // Clear status message after 2 seconds
         setTimeout(() => setStatus(""), 2000);
       } else {
         setStatus("Login failed: No token received");
@@ -74,9 +69,16 @@ function OptionsPage() {
       console.error("Login error:", error);
     }
   };
-  /// const handleLogout = async () => {
-  /// await HaloPSAAuth.logout();
-  /// };
+  const handleLogout = async () => {
+    try {
+      await HaloPSAAuth.signOut();
+      setStatus("Logout successful!");
+      setTimeout(() => setStatus(""), 2000);
+    } catch (error) {
+      setStatus("Logout failed");
+      console.error("Logout error:", error);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -88,7 +90,7 @@ function OptionsPage() {
 
   return (
     <div className="p-8 mx-auto max-w-screen-md space-y-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800">Quick Task Settings</h1>
+      <h1 className="text-2xl font-bold text-gray-800">Quick Ticket Settings</h1>
 
       {/* Redirect URI Section */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -187,18 +189,18 @@ function OptionsPage() {
             onClick={handleSave}
             className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md shadow-sm text-sm font-medium transition-colors w-full"
           >
-            Save Settings
+            Save
           </button>
 
           <button
             onClick={handleLogin}
             className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md shadow-sm text-sm font-medium transition-colors w-full"
           >
-            Test Login
+            Login
           </button>
 
           <button
-            ///onClick={handleLogout}
+            onClick={handleLogout}
             className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md shadow-sm text-sm font-medium transition-colors w-full"
           >
             Logout
