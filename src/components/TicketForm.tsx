@@ -48,8 +48,6 @@ interface Category {
   category_group_id: number;
 }
 
-
-
 function TicketForm() {
   const formatDate = (date: Date): string => {
     return date.toISOString().split("T")[0];
@@ -103,7 +101,9 @@ function TicketForm() {
     showPriority: true,
   });
 
-  const [categories, setCategories] = useState<Record<number, { value: string; label: string }[]>>({});
+  const [categories, setCategories] = useState<
+    Record<number, { value: string; label: string }[]>
+  >({});
 
   // Add this constant for priority options
   const PRIORITY_OPTIONS = [
@@ -303,7 +303,7 @@ function TicketForm() {
           startDate: formatDate(new Date()),
           targetDate: formatDate(tomorrow),
           category_1: "",
-          category_2: "", 
+          category_2: "",
           category_3: "",
           category_4: "",
           priority_id: "",
@@ -323,7 +323,7 @@ function TicketForm() {
     try {
       const token = await HaloPSAAuth.getAuthToken();
       const settings = await chrome.storage.sync.get(["apiUrl"]);
-      
+
       if (!token || !settings.apiUrl) {
         console.error("Missing token or API URL");
         return;
@@ -340,34 +340,43 @@ function TicketForm() {
       }
 
       const data: Category[] = await response.json();
-      
+
       // Organize categories by type_id
-      const organizedCategories: Record<number, { value: string; label: string }[]> = {};
-      
+      const organizedCategories: Record<
+        number,
+        { value: string; label: string }[]
+      > = {};
+
       data.forEach((category) => {
         if (!organizedCategories[category.type_id]) {
           organizedCategories[category.type_id] = [];
         }
-        
-        const parts = category.category_name.split('>').map(part => part.trim());
-        
+
+        const parts = category.category_name
+          .split(">")
+          .map((part) => part.trim());
+
         // Add each level of the hierarchy as a separate option
-        let currentPath = '';
+        let currentPath = "";
         parts.forEach((part, index) => {
           currentPath = index === 0 ? part : `${currentPath} > ${part}`;
-          
+
           // Only add if this exact path isn't already in the options
-          if (!organizedCategories[category.type_id].some(opt => opt.value === currentPath)) {
+          if (
+            !organizedCategories[category.type_id].some(
+              (opt) => opt.value === currentPath,
+            )
+          ) {
             organizedCategories[category.type_id].push({
               value: currentPath,
-              label: currentPath
+              label: currentPath,
             });
           }
         });
       });
 
       // Sort options alphabetically within each type
-      Object.values(organizedCategories).forEach(options => {
+      Object.values(organizedCategories).forEach((options) => {
         options.sort((a, b) => a.label.localeCompare(b.label));
       });
 
@@ -381,19 +390,19 @@ function TicketForm() {
     fetchCategories();
   }, []);
 
-  const CategorySelect = ({ 
-    typeId, 
-    value, 
-    onChange, 
-    label 
-  }: { 
+  const CategorySelect = ({
+    typeId,
+    value,
+    onChange,
+    label,
+  }: {
     typeId: number;
     value: string;
     onChange: (value: string) => void;
     label: string;
   }) => {
     const options = categories[typeId] || [];
-    
+
     return (
       <div>
         <label className="block text-gray-700 text-xs font-medium mb-1">
@@ -403,6 +412,7 @@ function TicketForm() {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-xs"
+          title={label}
         >
           <option value="">Select {label}</option>
           {options.map((option) => (
@@ -619,8 +629,14 @@ function TicketForm() {
               Priority
             </label>
             <select
+              title="Priority"
               value={formData.priority_id}
-              onChange={(e) => setFormData(prev => ({ ...prev, priority_id: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  priority_id: e.target.value,
+                }))
+              }
               className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-xs"
             >
               <option value="">Select Priority</option>
@@ -638,7 +654,9 @@ function TicketForm() {
             <CategorySelect
               typeId={1}
               value={formData.category_1}
-              onChange={(value) => setFormData(prev => ({ ...prev, category_1: value }))}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, category_1: value }))
+              }
               label="Category 1"
             />
           )}
@@ -646,7 +664,9 @@ function TicketForm() {
             <CategorySelect
               typeId={2}
               value={formData.category_2}
-              onChange={(value) => setFormData(prev => ({ ...prev, category_2: value }))}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, category_2: value }))
+              }
               label="Category 2"
             />
           )}
@@ -654,7 +674,9 @@ function TicketForm() {
             <CategorySelect
               typeId={3}
               value={formData.category_3}
-              onChange={(value) => setFormData(prev => ({ ...prev, category_3: value }))}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, category_3: value }))
+              }
               label="Category 3"
             />
           )}
@@ -662,7 +684,9 @@ function TicketForm() {
             <CategorySelect
               typeId={4}
               value={formData.category_4}
-              onChange={(value) => setFormData(prev => ({ ...prev, category_4: value }))}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, category_4: value }))
+              }
               label="Category 4"
             />
           )}

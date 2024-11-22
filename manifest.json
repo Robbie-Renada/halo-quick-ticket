@@ -3,7 +3,9 @@
   "name": "Halo Quick Ticket",
   "version": "1.0.0",
   "description": "Quickly create tickets in HaloPSA/ITSM/CRM",
-  "author": "Robbie Emerson",
+  "author": {
+    "email": "robbie_@live.co.uk"
+  },
   "permissions": ["storage", "identity"],
   "host_permissions": [],
   "optional_host_permissions": ["https://*/*"],
