@@ -1,5 +1,6 @@
 interface TokenData {
   access_token: string;
+  refresh_token?: string;
   expires_in: number;
   timestamp: number;
 }
@@ -7,6 +8,7 @@ interface TokenData {
 interface HaloConfig {
   apiUrl: string;
   clientId: string;
+  clientSecret: string;
 }
 
 class HaloPSAAuth {
@@ -20,8 +22,13 @@ class HaloPSAAuth {
   async getAuthToken(): Promise<string> {
     try {
       const token = await this.getStoredToken();
-      if (token && !this.isTokenExpired(token)) {
-        return token.access_token;
+      if (token) {
+        if (!this.isTokenExpired(token)) {
+          return token.access_token;
+        }
+        if (token.refresh_token) {
+          return this.refreshToken(token.refresh_token);
+        }
       }
       return this.authenticate();
     } catch (error) {
@@ -32,17 +39,18 @@ class HaloPSAAuth {
   }
 
   async authenticate(): Promise<string> {
-    const { apiUrl, clientId } = await this.getConfig();
+    const { apiUrl, clientId, clientSecret } = await this.getConfig();
 
-    if (!clientId) {
-      throw new Error("Client ID not configured. Please check extension settings.");
+    if (!clientId || !clientSecret) {
+      throw new Error("Client ID and Client Secret must be configured. Please check extension settings.");
     }
 
+    // Step 1: Get authorization code
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: this.redirectUri,
-      response_type: 'token',
-      scope: 'read:tickets edit:tickets'
+      response_type: 'code',
+      scope: 'read:tickets edit:tickets offline_access'
     });
 
     const authUrl = `${apiUrl}/auth/authorize?${params.toString()}`;
@@ -57,11 +65,39 @@ class HaloPSAAuth {
         throw new Error("Redirect URL is undefined");
       }
 
-      const hash = new URL(redirectUrl).hash.substring(1);
-      const params = new URLSearchParams(hash);
+      // Extract authorization code from URL
+      const url = new URL(redirectUrl);
+      const code = url.searchParams.get('code');
+      
+      if (!code) {
+        throw new Error("No authorization code received");
+      }
+
+      // Step 2: Exchange code for tokens
+      const tokenResponse = await fetch(`${apiUrl}/auth/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          client_secret: clientSecret,
+          code: code,
+          redirect_uri: this.redirectUri,
+        }),
+      });
+
+      if (!tokenResponse.ok) {
+        throw new Error("Failed to exchange code for token");
+      }
+
+      const tokenData = await tokenResponse.json();
+      
       const token: TokenData = {
-        access_token: params.get("access_token") || '',
-        expires_in: parseInt(params.get("expires_in") || '3600'),
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+        expires_in: tokenData.expires_in || 3600,
         timestamp: Date.now(),
       };
 
@@ -73,14 +109,53 @@ class HaloPSAAuth {
     }
   }
 
+  private async refreshToken(refreshToken: string): Promise<string> {
+    const { apiUrl, clientId, clientSecret } = await this.getConfig();
+
+    try {
+      const response = await fetch(`${apiUrl}/auth/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          client_id: clientId,
+          client_secret: clientSecret,
+          refresh_token: refreshToken,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to refresh token");
+      }
+
+      const tokenData = await response.json();
+      
+      const token: TokenData = {
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token || refreshToken,
+        expires_in: tokenData.expires_in || 3600,
+        timestamp: Date.now(),
+      };
+
+      await this.storeToken(token);
+      return token.access_token;
+    } catch (error) {
+      console.error("Token refresh error:", error);
+      throw new Error("Failed to refresh token");
+    }
+  }
+
   private async getConfig(): Promise<HaloConfig> {
-    const result = await chrome.storage.sync.get(["apiUrl", "clientId"]);
+    const result = await chrome.storage.sync.get(["apiUrl", "clientId", "clientSecret"]);
     if (!result.apiUrl) {
       throw new Error("API URL not configured");
     }
     return {
       apiUrl: result.apiUrl.replace(/\/+$/, ""),
       clientId: result.clientId,
+      clientSecret: result.clientSecret,
     };
   }
 

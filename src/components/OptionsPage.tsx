@@ -4,6 +4,7 @@ import HaloPSAAuth from "../services/auth";
 interface HaloSettings {
   apiUrl: string;
   clientId: string;
+  clientSecret: string;
   userId: string;
   ticketTypeId: string;
   showStartDate: boolean;
@@ -20,6 +21,7 @@ function OptionsPage() {
   const [settings, setSettings] = useState<HaloSettings>({
     apiUrl: "",
     clientId: "",
+    clientSecret: "",
     userId: "",
     ticketTypeId: "",
     showStartDate: true,
@@ -45,6 +47,7 @@ function OptionsPage() {
       const result = await chrome.storage.sync.get([
         "apiUrl",
         "clientId",
+        "clientSecret",
         "userId",
         "ticketTypeId",
         "showStartDate",
@@ -60,6 +63,7 @@ function OptionsPage() {
       setSettings({
         apiUrl: result.apiUrl || "",
         clientId: result.clientId || "",
+        clientSecret: result.clientSecret || "",
         userId: result.userId || "",
         ticketTypeId: result.ticketTypeId || "",
         showStartDate: result.showStartDate ?? true,
@@ -83,10 +87,10 @@ function OptionsPage() {
       if (settings.apiUrl) {
         const url = new URL(settings.apiUrl);
         const hostPermission = `https://${url.hostname}/*`;
-        
+
         // Request permission for this specific domain
         const granted = await chrome.permissions.request({
-          origins: [hostPermission]
+          origins: [hostPermission],
         });
 
         if (!granted) {
@@ -169,18 +173,26 @@ function OptionsPage() {
 
       {/* Setup Instructions - more compact */}
       <div className="bg-white rounded-md shadow-sm border border-gray-200 p-3 mb-3">
-        <h2 className="text-sm font-semibold text-gray-800 mb-1">Setup Instructions</h2>
+        <h2 className="text-sm font-semibold text-gray-800 mb-1">
+          Setup Instructions
+        </h2>
         <ol className="compact-list text-gray-600 list-decimal list-inside text-sm">
-          <li>Navigate to HaloPSA: <code className="text-xs bg-gray-100 px-1">Config / Integrations / HaloAPI / View Applications / New</code></li>
-          <li>On the Details tab:
+          <li>
+            Navigate to HaloPSA:{" "}
+            <code className="text-xs bg-gray-100 px-1">
+              Config / Integrations / HaloAPI / View Applications / New
+            </code>
+          </li>
+          <li>
+            On the Details tab:
             <ul className="ml-4 list-disc list-inside text-xs text-gray-500">
               <li>Name your application</li>
-              <li>Select "Implicit Flow"</li>
+              <li>Select "Authorization Code Flow"</li>
               <li>Add Redirect URI:</li>
             </ul>
           </li>
         </ol>
-        
+
         <div className="bg-gray-50 p-1.5 my-2 rounded flex items-center justify-between text-xs">
           <code className="text-gray-600">{redirectUri}</code>
           <button
@@ -191,10 +203,20 @@ function OptionsPage() {
           </button>
         </div>
 
-        <ol className="compact-list text-gray-600 list-decimal list-inside text-sm" start={3}>
-          <li>Check "Agent Logins" under Preferences</li>
+        <ol
+          className="compact-list text-gray-600 list-decimal list-inside text-sm"
+          start={3}
+        >
           <li>Copy Client ID to paste below</li>
-          <li>Add Permissions: <span className="text-xs text-gray-500">read:tickets, edit:tickets</span></li>
+          <li>Select 'use a client secret for the token request'</li>
+          <li>Copy Client Secret to paste below</li>
+          <li>Check "Agent Logins" under Preferences</li>
+          <li>
+            Add Permissions:{" "}
+            <span className="text-xs text-gray-500">
+              read:tickets, edit:tickets
+            </span>
+          </li>
           <li>Save the application</li>
           <li>Complete settings below</li>
         </ol>
@@ -239,6 +261,23 @@ function OptionsPage() {
 
         <div>
           <label
+            htmlFor="clientSecret"
+            className="block text-gray-700 text-xs font-medium pb-1"
+          >
+            Client Secret:
+          </label>
+          <input
+            type="password"
+            id="clientSecret"
+            name="clientSecret"
+            value={settings.clientSecret}
+            onChange={handleInputChange}
+            className="w-full border-gray-300 rounded-md shadow-sm text-sm"
+          />
+        </div>
+
+        <div>
+          <label
             htmlFor="userId"
             className="block text-gray-700 text-xs font-medium pb-1"
           >
@@ -273,7 +312,9 @@ function OptionsPage() {
 
         {/* Form Fields */}
         <div>
-          <h2 className="text-base font-semibold text-gray-800 mb-2">Form Fields</h2>
+          <h2 className="text-base font-semibold text-gray-800 mb-2">
+            Form Fields
+          </h2>
           <div className="space-y-3">
             {/* Core Fields - using grid with 4 columns */}
             <div className="grid grid-cols-4 gap-4">
@@ -286,11 +327,14 @@ function OptionsPage() {
                   onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
-                <label htmlFor="showStartDate" className="ml-2 text-sm text-gray-700">
+                <label
+                  htmlFor="showStartDate"
+                  className="ml-2 text-sm text-gray-700"
+                >
                   Start Date
                 </label>
               </div>
-              
+
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -300,11 +344,14 @@ function OptionsPage() {
                   onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
-                <label htmlFor="showTargetDate" className="ml-2 text-sm text-gray-700">
+                <label
+                  htmlFor="showTargetDate"
+                  className="ml-2 text-sm text-gray-700"
+                >
                   Target Date
                 </label>
               </div>
-              
+
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -314,7 +361,10 @@ function OptionsPage() {
                   onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
-                <label htmlFor="showTimeBudget" className="ml-2 text-sm text-gray-700">
+                <label
+                  htmlFor="showTimeBudget"
+                  className="ml-2 text-sm text-gray-700"
+                >
                   Time Budget
                 </label>
               </div>
@@ -328,7 +378,10 @@ function OptionsPage() {
                   onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
-                <label htmlFor="showPriority" className="ml-2 text-sm text-gray-700">
+                <label
+                  htmlFor="showPriority"
+                  className="ml-2 text-sm text-gray-700"
+                >
                   Priority
                 </label>
               </div>
@@ -345,7 +398,10 @@ function OptionsPage() {
                   onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
-                <label htmlFor="showCategory1" className="ml-2 text-sm text-gray-700">
+                <label
+                  htmlFor="showCategory1"
+                  className="ml-2 text-sm text-gray-700"
+                >
                   Category 1
                 </label>
               </div>
@@ -359,7 +415,10 @@ function OptionsPage() {
                   onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
-                <label htmlFor="showCategory2" className="ml-2 text-sm text-gray-700">
+                <label
+                  htmlFor="showCategory2"
+                  className="ml-2 text-sm text-gray-700"
+                >
                   Category 2
                 </label>
               </div>
@@ -373,7 +432,10 @@ function OptionsPage() {
                   onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
-                <label htmlFor="showCategory3" className="ml-2 text-sm text-gray-700">
+                <label
+                  htmlFor="showCategory3"
+                  className="ml-2 text-sm text-gray-700"
+                >
                   Category 3
                 </label>
               </div>
@@ -387,7 +449,10 @@ function OptionsPage() {
                   onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
-                <label htmlFor="showCategory4" className="ml-2 text-sm text-gray-700">
+                <label
+                  htmlFor="showCategory4"
+                  className="ml-2 text-sm text-gray-700"
+                >
                   Category 4
                 </label>
               </div>
