@@ -359,7 +359,7 @@ function TicketForm() {
         // Add each level of the hierarchy as a separate option
         let currentPath = "";
         parts.forEach((part, index) => {
-          currentPath = index === 0 ? part : `${currentPath} > ${part}`;
+          currentPath = index === 0 ? part : `${currentPath}>${part}`;
 
           // Only add if this exact path isn't already in the options
           if (
