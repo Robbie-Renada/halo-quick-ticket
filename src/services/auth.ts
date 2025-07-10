@@ -11,7 +11,7 @@ interface HaloConfig {
   clientSecret: string;
 }
 
-class HaloPSAAuth {
+class HaloAuth {
   private redirectUri: string;
 
   constructor() {
@@ -33,7 +33,7 @@ class HaloPSAAuth {
       return this.authenticate();
     } catch (error) {
       throw new Error(
-        "Please configure the extension settings and test your login before creating tasks."
+        "Please configure the extension settings and test your login before creating tasks.",
       );
     }
   }
@@ -42,15 +42,17 @@ class HaloPSAAuth {
     const { apiUrl, clientId, clientSecret } = await this.getConfig();
 
     if (!clientId || !clientSecret) {
-      throw new Error("Client ID and Client Secret must be configured. Please check extension settings.");
+      throw new Error(
+        "Client ID and Client Secret must be configured. Please check extension settings.",
+      );
     }
 
     // Step 1: Get authorization code
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: this.redirectUri,
-      response_type: 'code',
-      scope: 'read:tickets edit:tickets offline_access'
+      response_type: "code",
+      scope: "read:tickets edit:tickets offline_access",
     });
 
     const authUrl = `${apiUrl}/auth/authorize?${params.toString()}`;
@@ -67,20 +69,20 @@ class HaloPSAAuth {
 
       // Extract authorization code from URL
       const url = new URL(redirectUrl);
-      const code = url.searchParams.get('code');
-      
+      const code = url.searchParams.get("code");
+
       if (!code) {
         throw new Error("No authorization code received");
       }
 
       // Step 2: Exchange code for tokens
       const tokenResponse = await fetch(`${apiUrl}/auth/token`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
-          grant_type: 'authorization_code',
+          grant_type: "authorization_code",
           client_id: clientId,
           client_secret: clientSecret,
           code: code,
@@ -93,7 +95,7 @@ class HaloPSAAuth {
       }
 
       const tokenData = await tokenResponse.json();
-      
+
       const token: TokenData = {
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token,
@@ -114,12 +116,12 @@ class HaloPSAAuth {
 
     try {
       const response = await fetch(`${apiUrl}/auth/token`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
-          grant_type: 'refresh_token',
+          grant_type: "refresh_token",
           client_id: clientId,
           client_secret: clientSecret,
           refresh_token: refreshToken,
@@ -131,7 +133,7 @@ class HaloPSAAuth {
       }
 
       const tokenData = await response.json();
-      
+
       const token: TokenData = {
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token || refreshToken,
@@ -148,7 +150,11 @@ class HaloPSAAuth {
   }
 
   private async getConfig(): Promise<HaloConfig> {
-    const result = await chrome.storage.sync.get(["apiUrl", "clientId", "clientSecret"]);
+    const result = await chrome.storage.sync.get([
+      "apiUrl",
+      "clientId",
+      "clientSecret",
+    ]);
     if (!result.apiUrl) {
       throw new Error("API URL not configured");
     }
@@ -190,4 +196,4 @@ class HaloPSAAuth {
   }
 }
 
-export default new HaloPSAAuth(); 
+export default new HaloAuth();

@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
-import HaloPSAAuth from "../services/auth";
+import { useState, useEffect, useCallback } from "react";
+import HaloAuth from "../services/auth";
+import UserService, { HaloUser } from "../services/userService";
 
 interface FormData {
   summary: string;
   details: string;
   projecttimebudget: string;
+  timetaken: string;
   startDate: string;
   targetDate: string;
   category_1: string;
@@ -12,14 +14,18 @@ interface FormData {
   category_3: string;
   category_4: string;
   priority_id: string;
+  chargeType: string;
 }
 
 interface TicketPayload {
   summary: string;
   details: string;
   user_Id: string;
+  site_id?: string;
+  client_id?: string;
   ticketType_Id: string;
   projecttimebudget?: string;
+  timetaken?: string;
   startDate?: string;
   targetDate?: string;
   _novalidate: boolean;
@@ -28,6 +34,9 @@ interface TicketPayload {
   category_3: string;
   category_4: string;
   priority_id: string;
+  new_actioncode?: string;
+  status_id?: number;
+  _newticket_quickclose?: boolean;
 }
 
 interface TicketResponse {
@@ -48,6 +57,14 @@ interface Category {
   category_group_id: number;
 }
 
+interface ChargeType {
+  id: number;
+  name: string;
+}
+
+// Add app state type
+type AppState = "loading" | "unconfigured" | "unauthenticated" | "ready";
+
 function TicketForm() {
   const formatDate = (date: Date): string => {
     return date.toISOString().split("T")[0];
@@ -66,10 +83,15 @@ function TicketForm() {
   const budgettime = new Date();
   budgettime.setHours(0, 0, 0, 0);
 
+  // Add app state management
+  const [appState, setAppState] = useState<AppState>("loading");
+  const [authError, setAuthError] = useState<string>("");
+
   const [formData, setFormData] = useState<FormData>({
     summary: "",
     details: "",
     projecttimebudget: formatTime(budgettime),
+    timetaken: "00:00",
     startDate: formatDate(new Date()),
     targetDate: formatDate(tomorrow),
     category_1: "",
@@ -77,6 +99,7 @@ function TicketForm() {
     category_3: "",
     category_4: "",
     priority_id: "",
+    chargeType: "",
   });
   const [status, setStatus] = useState<{
     message: string;
@@ -86,7 +109,8 @@ function TicketForm() {
     type: "",
   });
 
-  const [buttonText, setButtonText] = useState("Submit");
+  const [submitButtonText, setSubmitButtonText] = useState("Submit");
+  const [completeButtonText, setCompleteButtonText] = useState("Complete");
 
   const [lastTicket, setLastTicket] = useState<LastTicket | null>(null);
 
@@ -94,16 +118,45 @@ function TicketForm() {
     showStartDate: true,
     showTargetDate: true,
     showprojecttimebudget: true,
+    showTimeTaken: true,
+    showChargeType: true,
     showCategory1: true,
     showCategory2: true,
     showCategory3: true,
     showCategory4: true,
     showPriority: true,
+    allowCompleteTickets: false,
   });
+
+  const [fieldOrder, setFieldOrder] = useState<string[]>([
+    "projecttimebudget",
+    "startDate",
+    "targetDate",
+    "priority",
+    "category1",
+    "category2",
+    "category3",
+    "category4",
+    "timetaken",
+    "chargeType",
+  ]);
 
   const [categories, setCategories] = useState<
     Record<number, { value: string; label: string }[]>
   >({});
+
+  const [chargeTypes, setChargeTypes] = useState<ChargeType[]>([]);
+
+  // User selection state
+  const [allowUserSelection, setAllowUserSelection] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<HaloUser | null>(null);
+  const [availableUsers, setAvailableUsers] = useState<HaloUser[]>([]);
+  const [userSearch, setUserSearch] = useState("");
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [userSearchTimeout, setUserSearchTimeout] = useState<number | null>(
+    null,
+  );
 
   // Add this constant for priority options
   const PRIORITY_OPTIONS = [
@@ -112,6 +165,95 @@ function TicketForm() {
     { value: "3", label: "Medium" },
     { value: "4", label: "Low" },
   ];
+
+  // Add function to check configuration and authentication
+  const checkAppState = useCallback(async () => {
+    try {
+      setAppState("loading");
+      setAuthError("");
+
+      // Check if extension is configured
+      const settings = await chrome.storage.sync.get([
+        "apiUrl",
+        "selectedUser",
+        "ticketTypeId",
+        "clientId",
+        "clientSecret",
+      ]);
+
+      if (
+        !settings.apiUrl ||
+        !settings.selectedUser ||
+        !settings.ticketTypeId
+      ) {
+        setAppState("unconfigured");
+        return;
+      }
+
+      if (!settings.clientId || !settings.clientSecret) {
+        setAppState("unconfigured");
+        return;
+      }
+
+      // Check if user is authenticated
+      try {
+        const token = await HaloAuth.getAuthToken();
+        if (!token) {
+          setAppState("unauthenticated");
+          return;
+        }
+
+        // Test the token by making a simple API call
+        const response = await fetch(`${settings.apiUrl}api/agent/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            setAppState("unauthenticated");
+            setAuthError(
+              "Authentication failed. Please check your credentials in the options page.",
+            );
+          } else {
+            setAppState("unauthenticated");
+            setAuthError(
+              "Unable to connect to Halo. Please check your configuration.",
+            );
+          }
+          return;
+        }
+
+        setAppState("ready");
+      } catch (error) {
+        setAppState("unauthenticated");
+        setAuthError(
+          "Authentication failed. Please check your credentials in the options page.",
+        );
+      }
+    } catch (error) {
+      setAppState("unconfigured");
+      console.error("Error checking app state:", error);
+    }
+  }, []);
+
+  // Add function to handle login
+  const handleLogin = async () => {
+    try {
+      await HaloAuth.authenticate();
+      await checkAppState(); // Recheck state after login
+    } catch (error) {
+      setAuthError(
+        "Login failed. Please check your credentials in the options page.",
+      );
+    }
+  };
+
+  // Add function to open options page
+  const openOptionsPage = () => {
+    chrome.runtime.openOptionsPage();
+  };
 
   // Load saved form data on mount
   useEffect(() => {
@@ -122,12 +264,18 @@ function TicketForm() {
         chrome.storage.sync.get([
           "showStartDate",
           "showTargetDate",
-          "showprojecttimebudget",
+          "showTimeBudget",
+          "showTimeTaken",
+          "showChargeType",
           "showCategory1",
           "showCategory2",
           "showCategory3",
           "showCategory4",
           "showPriority",
+          "allowUserSelection",
+          "allowCompleteTickets",
+          "fieldOrder",
+          "selectedUser",
         ]),
       ]);
 
@@ -145,16 +293,88 @@ function TicketForm() {
       setFormSettings({
         showStartDate: settings.showStartDate ?? true,
         showTargetDate: settings.showTargetDate ?? true,
-        showprojecttimebudget: settings.showprojecttimebudget ?? true,
+        showprojecttimebudget: settings.showTimeBudget ?? true,
+        showTimeTaken: settings.showTimeTaken ?? true,
+        showChargeType: settings.showChargeType ?? true,
         showCategory1: settings.showCategory1 ?? true,
         showCategory2: settings.showCategory2 ?? true,
         showCategory3: settings.showCategory3 ?? true,
         showCategory4: settings.showCategory4 ?? true,
         showPriority: settings.showPriority ?? true,
+        allowCompleteTickets: settings.allowCompleteTickets ?? false,
       });
+
+      // Set field order
+      setFieldOrder(
+        settings.fieldOrder ?? [
+          "projecttimebudget",
+          "startDate",
+          "targetDate",
+          "priority",
+          "category1",
+          "category2",
+          "category3",
+          "category4",
+          "timetaken",
+          "chargeType",
+        ],
+      );
+
+      // Set user selection setting
+      setAllowUserSelection(settings.allowUserSelection ?? false);
+
+      // Set selected user from settings if available
+      if (settings.selectedUser) {
+        setSelectedUser(settings.selectedUser);
+        setUserSearch(
+          UserService.formatUserDisplayNameCompact(
+            settings.selectedUser.name,
+            settings.selectedUser.site_name,
+            settings.selectedUser.client_name,
+          ),
+        );
+      }
+
+      // Load initial users if user selection is allowed
+      if (settings.allowUserSelection) {
+        searchUsers("");
+      }
     };
-    loadSavedData();
+
+    loadSavedData().then(() => {
+      checkAppState();
+    });
   }, []);
+
+  // Add listener for storage changes to recheck state
+  useEffect(() => {
+    const handleStorageChange = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      areaName: string,
+    ) => {
+      // Only recheck app state if sync storage changes (configuration changes)
+      // Ignore local storage changes (form data saves)
+      if (areaName === "sync") {
+        const configKeys = [
+          "apiUrl",
+          "selectedUser",
+          "ticketTypeId",
+          "clientId",
+          "clientSecret",
+        ];
+        const hasConfigChange = configKeys.some((key) => changes[key]);
+
+        if (hasConfigChange) {
+          checkAppState();
+        }
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
+  }, [checkAppState]);
 
   // Debounce the save operation to avoid too many writes
   useEffect(() => {
@@ -164,8 +384,10 @@ function TicketForm() {
           summary: formData.summary,
           details: formData.details,
           projecttimebudget: formData.projecttimebudget,
+          timetaken: formData.timetaken,
           startDate: formData.startDate,
           targetDate: formData.targetDate,
+          chargeType: formData.chargeType,
         },
       });
     }, 100);
@@ -206,47 +428,83 @@ function TicketForm() {
     return decimalHours.toString();
   };
 
+  // User search and selection functions
+  const searchUsers = async (searchTerm: string) => {
+    if (!allowUserSelection) return;
+
+    setIsLoadingUsers(true);
+    try {
+      const users = await UserService.fetchUsers(searchTerm);
+      setAvailableUsers(users);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+      setAvailableUsers([]);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  const handleUserSearch = (searchTerm: string) => {
+    setUserSearch(searchTerm);
+
+    // Clear existing timeout
+    if (userSearchTimeout) {
+      clearTimeout(userSearchTimeout);
+    }
+
+    // Set new timeout for debounced search
+    const timeout = setTimeout(() => {
+      searchUsers(searchTerm);
+    }, 300); // 300ms debounce
+
+    setUserSearchTimeout(timeout);
+  };
+
+  const handleUserSelect = (user: HaloUser) => {
+    setSelectedUser(user);
+    setUserSearch(
+      UserService.formatUserDisplayNameCompact(
+        user.name,
+        user.site_name,
+        user.client_name,
+      ),
+    );
+    setShowUserDropdown(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus({ message: "", type: "" });
-    setButtonText("Submitting...");
+    setSubmitButtonText("Submitting...");
 
     try {
-      const token = await HaloPSAAuth.getAuthToken();
-      if (!token) {
-        setStatus({
-          message: "Please log in before creating a ticket",
-          type: "error",
-        });
-        setButtonText("Submit");
-        return;
-      }
-
+      // At this point, we know the app is ready (configuration and auth are valid)
+      const token = await HaloAuth.getAuthToken();
       const settings = await chrome.storage.sync.get([
         "apiUrl",
-        "userId",
+        "selectedUser",
         "ticketTypeId",
       ]);
-
-      if (!settings.apiUrl || !settings.userId || !settings.ticketTypeId) {
-        setStatus({
-          message: "Please configure extension settings first",
-          type: "error",
-        });
-        setButtonText("Submit");
-        return;
-      }
 
       const fieldMap = {
         startDate: formSettings.showStartDate,
         targetDate: formSettings.showTargetDate,
         projecttimebudget: formSettings.showprojecttimebudget,
+        timetaken: formSettings.showTimeTaken,
       } as const;
+
+      // Determine which user to use - if user selection is allowed and user selected, use that, otherwise use default from settings
+      const userToUse =
+        allowUserSelection && selectedUser
+          ? selectedUser
+          : settings.selectedUser;
 
       const payload: TicketPayload = {
         summary: formData.summary,
         details: formData.details,
-        user_Id: settings.userId,
+        user_Id: userToUse.id,
+        site_id: userToUse.site_id_int.toString(),
+        client_id: userToUse.client_id,
         ticketType_Id: settings.ticketTypeId,
         _novalidate: true,
         ...Object.entries(fieldMap)
@@ -255,7 +513,7 @@ function TicketForm() {
             (acc, [field]) => ({
               ...acc,
               [field]:
-                field === "projecttimebudget"
+                field === "projecttimebudget" || field === "timetaken"
                   ? convertTimeToDecimalHours(formData[field])
                   : formData[field as keyof typeof formData],
             }),
@@ -266,6 +524,7 @@ function TicketForm() {
         category_3: formData.category_3,
         category_4: formData.category_4,
         priority_id: formData.priority_id,
+        new_actioncode: formData.chargeType || "0",
       };
 
       const response = await fetch(`${settings.apiUrl}api/tickets`, {
@@ -292,7 +551,7 @@ function TicketForm() {
       ]);
 
       setLastTicket(newTicket);
-      setButtonText("Success!");
+      setSubmitButtonText("Success!");
 
       // Reset form after a delay
       setTimeout(() => {
@@ -300,6 +559,7 @@ function TicketForm() {
           summary: "",
           details: "",
           projecttimebudget: formatTime(budgettime),
+          timetaken: "00:00",
           startDate: formatDate(new Date()),
           targetDate: formatDate(tomorrow),
           category_1: "",
@@ -307,21 +567,132 @@ function TicketForm() {
           category_3: "",
           category_4: "",
           priority_id: "",
+          chargeType: "",
         });
-        setButtonText("Submit");
+        setSubmitButtonText("Submit");
       }, 2000);
     } catch (error) {
       setStatus({
         message: error instanceof Error ? error.message : "An error occurred",
         type: "error",
       });
-      setButtonText("Submit");
+      setSubmitButtonText("Submit");
     }
   };
 
-  const fetchCategories = async () => {
+  const handleComplete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus({ message: "", type: "" });
+    setCompleteButtonText("Completing...");
+
     try {
-      const token = await HaloPSAAuth.getAuthToken();
+      // At this point, we know the app is ready (configuration and auth are valid)
+      const token = await HaloAuth.getAuthToken();
+      const settings = await chrome.storage.sync.get([
+        "apiUrl",
+        "selectedUser",
+        "ticketTypeId",
+      ]);
+
+      const fieldMap = {
+        startDate: formSettings.showStartDate,
+        targetDate: formSettings.showTargetDate,
+        projecttimebudget: formSettings.showprojecttimebudget,
+        timetaken: formSettings.showTimeTaken,
+      } as const;
+
+      // Determine which user to use - if user selection is allowed and user selected, use that, otherwise use default from settings
+      const userToUse =
+        allowUserSelection && selectedUser
+          ? selectedUser
+          : settings.selectedUser;
+
+      const payload: TicketPayload = {
+        summary: formData.summary,
+        details: formData.details,
+        user_Id: userToUse.id,
+        site_id: userToUse.site_id_int.toString(),
+        client_id: userToUse.client_id,
+        ticketType_Id: settings.ticketTypeId,
+        _novalidate: true,
+        status_id: 9,
+        _newticket_quickclose: true,
+        ...Object.entries(fieldMap)
+          .filter(([_, isEnabled]) => isEnabled)
+          .reduce(
+            (acc, [field]) => ({
+              ...acc,
+              [field]:
+                field === "projecttimebudget" || field === "timetaken"
+                  ? convertTimeToDecimalHours(formData[field])
+                  : formData[field as keyof typeof formData],
+            }),
+            {},
+          ),
+        category_1: formData.category_1,
+        category_2: formData.category_2,
+        category_3: formData.category_3,
+        category_4: formData.category_4,
+        priority_id: formData.priority_id,
+        new_actioncode: formData.chargeType || "0",
+      };
+
+      const response = await fetch(`${settings.apiUrl}api/tickets`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify([payload]),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const responseData = (await response.json()) as TicketResponse;
+      const ticketUrl = `${settings.apiUrl}tickets?id=${responseData.id}`;
+
+      // Save last ticket info
+      const newTicket = { id: responseData.id, url: ticketUrl };
+      await Promise.all([
+        chrome.storage.local.remove("ticketFormData"),
+        chrome.storage.local.set({ lastTicket: newTicket }),
+      ]);
+
+      setLastTicket(newTicket);
+      setCompleteButtonText("Success!");
+
+      // Reset form after a delay
+      setTimeout(() => {
+        setFormData({
+          summary: "",
+          details: "",
+          projecttimebudget: formatTime(budgettime),
+          timetaken: "00:00",
+          startDate: formatDate(new Date()),
+          targetDate: formatDate(tomorrow),
+          category_1: "",
+          category_2: "",
+          category_3: "",
+          category_4: "",
+          priority_id: "",
+          chargeType: "",
+        });
+        setCompleteButtonText("Complete");
+      }, 2000);
+    } catch (error) {
+      setStatus({
+        message: error instanceof Error ? error.message : "An error occurred",
+        type: "error",
+      });
+      setCompleteButtonText("Complete");
+    }
+  };
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const token = await HaloAuth.getAuthToken();
       const settings = await chrome.storage.sync.get(["apiUrl"]);
 
       if (!token || !settings.apiUrl) {
@@ -336,6 +707,11 @@ function TicketForm() {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // Token may have expired, recheck app state
+          await checkAppState();
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -383,12 +759,80 @@ function TicketForm() {
       setCategories(organizedCategories);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
+      // If there's an error, recheck app state to ensure we're still authenticated
+      await checkAppState();
     }
-  };
+  }, [checkAppState]);
+
+  const fetchChargeTypes = useCallback(async () => {
+    try {
+      const token = await HaloAuth.getAuthToken();
+      const settings = await chrome.storage.sync.get(["apiUrl"]);
+
+      if (!token || !settings.apiUrl) {
+        console.error("Missing token or API URL");
+        return;
+      }
+
+      const response = await fetch(
+        `${settings.apiUrl}/api/Lookup?lookupid=17&showallcodes=true`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Token may have expired, recheck app state
+          await checkAppState();
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: ChargeType[] = await response.json();
+      setChargeTypes(data);
+    } catch (error) {
+      console.error("Failed to fetch charge types:", error);
+      // If there's an error, recheck app state to ensure we're still authenticated
+      await checkAppState();
+    }
+  }, [checkAppState]);
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (appState === "ready") {
+      fetchCategories();
+      fetchChargeTypes();
+    }
+  }, [appState, fetchCategories, fetchChargeTypes]);
+
+  // Close user dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showUserDropdown && event.target instanceof Element) {
+        const dropdown = document.querySelector(".user-dropdown");
+        if (dropdown && !dropdown.contains(event.target)) {
+          setShowUserDropdown(false);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showUserDropdown]);
+
+  // Cleanup search timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (userSearchTimeout) {
+        clearTimeout(userSearchTimeout);
+      }
+    };
+  }, [userSearchTimeout]);
 
   const CategorySelect = ({
     typeId,
@@ -425,8 +869,500 @@ function TicketForm() {
     );
   };
 
+  // Dynamic field rendering system
+  const renderFormField = (fieldKey: string) => {
+    switch (fieldKey) {
+      case "projecttimebudget":
+        return (
+          formSettings.showprojecttimebudget && (
+            <div key={fieldKey}>
+              <label
+                htmlFor="projecttimebudget"
+                className="block text-gray-700 text-xs font-bold pb-1"
+              >
+                Time Budget
+              </label>
+              <input
+                type="time"
+                tabIndex={3}
+                id="projecttimebudget"
+                className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
+                value={formData.projecttimebudget}
+                onChange={(e) => {
+                  const [hours, minutes] = e.target.value.split(":");
+                  const newTime = new Date();
+                  newTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                  setFormData((prev) => ({
+                    ...prev,
+                    projecttimebudget: formatTime(newTime),
+                  }));
+                }}
+              />
+              <div className="w-full flex pt-0.5 gap-1">
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
+                  onClick={() => HandleAddTimeButton(0.25)}
+                >
+                  + 15 Minutes
+                </button>
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
+                  onClick={() => HandleTimeButton(1)}
+                >
+                  1 Hour
+                </button>
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
+                  onClick={() => HandleTimeButton(2)}
+                >
+                  2 Hours
+                </button>
+              </div>
+            </div>
+          )
+        );
+
+      case "startDate":
+        return (
+          formSettings.showStartDate && (
+            <div key={fieldKey}>
+              <label
+                htmlFor="startdate"
+                className="block text-gray-700 text-xs font-bold pb-1"
+              >
+                Start Date
+              </label>
+              <input
+                type="date"
+                tabIndex={4}
+                id="startdate"
+                value={formData.startDate}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    startDate: e.target.value,
+                  }))
+                }
+                className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
+              />
+              <div className="w-full flex pt-0.5 gap-1">
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
+                  onClick={() => HandleDateButton("start", 0)}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
+                  onClick={() => HandleDateButton("start", 1)}
+                >
+                  Tomorrow
+                </button>
+              </div>
+            </div>
+          )
+        );
+
+      case "targetDate":
+        return (
+          formSettings.showTargetDate && (
+            <div key={fieldKey}>
+              <label
+                htmlFor="targetdate"
+                className="block text-gray-700 text-xs font-bold pb-1"
+              >
+                Target Date
+              </label>
+              <input
+                type="date"
+                tabIndex={5}
+                id="targetdate"
+                value={formData.targetDate}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    targetDate: e.target.value,
+                  }))
+                }
+                className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
+              />
+              <div className="w-full flex pt-0.5 gap-1">
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
+                  onClick={() => HandleDateButton("target", 0)}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
+                  onClick={() => HandleDateButton("target", 1)}
+                >
+                  Tomorrow
+                </button>
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
+                  onClick={() => HandleDateButton("target", 7)}
+                >
+                  Next Week
+                </button>
+              </div>
+            </div>
+          )
+        );
+
+      case "priority":
+        return (
+          formSettings.showPriority && (
+            <div key={fieldKey}>
+              <label className="block text-gray-700 text-xs font-bold pb-1">
+                Priority
+              </label>
+              <select
+                title="Priority"
+                value={formData.priority_id}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    priority_id: e.target.value,
+                  }))
+                }
+                className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-xs"
+              >
+                <option value="">Select Priority</option>
+                {PRIORITY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )
+        );
+
+      case "category1":
+        return (
+          formSettings.showCategory1 && (
+            <CategorySelect
+              key={fieldKey}
+              typeId={1}
+              value={formData.category_1}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, category_1: value }))
+              }
+              label="Category 1"
+            />
+          )
+        );
+
+      case "category2":
+        return (
+          formSettings.showCategory2 && (
+            <CategorySelect
+              key={fieldKey}
+              typeId={2}
+              value={formData.category_2}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, category_2: value }))
+              }
+              label="Category 2"
+            />
+          )
+        );
+
+      case "category3":
+        return (
+          formSettings.showCategory3 && (
+            <CategorySelect
+              key={fieldKey}
+              typeId={3}
+              value={formData.category_3}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, category_3: value }))
+              }
+              label="Category 3"
+            />
+          )
+        );
+
+      case "category4":
+        return (
+          formSettings.showCategory4 && (
+            <CategorySelect
+              key={fieldKey}
+              typeId={4}
+              value={formData.category_4}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, category_4: value }))
+              }
+              label="Category 4"
+            />
+          )
+        );
+
+      case "timetaken":
+        return (
+          formSettings.showTimeTaken && (
+            <div key={fieldKey}>
+              <label
+                htmlFor="timetaken"
+                className="block text-gray-700 text-xs font-bold pb-1"
+              >
+                Time Taken
+              </label>
+              <input
+                type="time"
+                tabIndex={3}
+                id="timetaken"
+                className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
+                value={formData.timetaken}
+                onChange={(e) => {
+                  const [hours, minutes] = e.target.value.split(":");
+                  const newTime = new Date();
+                  newTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                  setFormData((prev) => ({
+                    ...prev,
+                    timetaken: formatTime(newTime),
+                  }));
+                }}
+              />
+              <div className="w-full flex pt-0.5 gap-1">
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
+                  onClick={() => {
+                    const [hours, minutes] = formData.timetaken.split(":");
+                    const currentTime = new Date();
+                    currentTime.setHours(
+                      parseInt(hours),
+                      parseInt(minutes),
+                      0,
+                      0,
+                    );
+                    currentTime.setMinutes(currentTime.getMinutes() + 15);
+                    setFormData((prev) => ({
+                      ...prev,
+                      timetaken: formatTime(currentTime),
+                    }));
+                  }}
+                >
+                  + 15 Minutes
+                </button>
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
+                  onClick={() => {
+                    const newTime = new Date();
+                    newTime.setHours(1, 0, 0, 0);
+                    setFormData((prev) => ({
+                      ...prev,
+                      timetaken: formatTime(newTime),
+                    }));
+                  }}
+                >
+                  1 Hour
+                </button>
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
+                  onClick={() => {
+                    const newTime = new Date();
+                    newTime.setHours(2, 0, 0, 0);
+                    setFormData((prev) => ({
+                      ...prev,
+                      timetaken: formatTime(newTime),
+                    }));
+                  }}
+                >
+                  2 Hours
+                </button>
+              </div>
+            </div>
+          )
+        );
+
+      case "chargeType":
+        return (
+          formSettings.showChargeType && (
+            <div key={fieldKey}>
+              <label className="block text-gray-700 text-xs font-bold pb-1">
+                Charge Type
+              </label>
+              <select
+                title="Charge Type"
+                value={formData.chargeType}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    chargeType: e.target.value,
+                  }))
+                }
+                className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-xs"
+              >
+                <option value="">Select Charge Type</option>
+                {chargeTypes.map((chargeType) => (
+                  <option key={chargeType.id} value={chargeType.id.toString()}>
+                    {chargeType.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // Render different screens based on app state
+  if (appState === "loading") {
+    return (
+      <div className="w-full max-w-lg bg-white rounded-md shadow-md text-sm">
+        <div className="flex flex-col items-center justify-center p-6">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (appState === "unconfigured") {
+    return (
+      <div className="w-full max-w-lg bg-white rounded-md shadow-md text-sm">
+        <div className="flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
+            <svg
+              className="w-6 h-6 text-yellow-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            Extension Setup Required
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Before you can create tickets, you need to configure your Halo
+            connection settings.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={openOptionsPage}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm transition-colors duration-200"
+            >
+              Open Settings
+            </button>
+            <button
+              onClick={checkAppState}
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md shadow-sm transition-colors duration-200"
+              title="Refresh status"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (appState === "unauthenticated") {
+    return (
+      <div className="w-full max-w-lg bg-white rounded-md shadow-md text-sm">
+        <div className="flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <svg
+              className="w-6 h-6 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m0 0v2m0-2h2m-2 0H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            Authentication Required
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Please log in to your Halo account to create tickets.
+          </p>
+          {authError && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+              <p className="text-red-700 text-sm">{authError}</p>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={handleLogin}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm transition-colors duration-200"
+            >
+              Login to Halo
+            </button>
+            <button
+              onClick={openOptionsPage}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md shadow-sm transition-colors duration-200"
+            >
+              Check Settings
+            </button>
+            <button
+              onClick={checkAppState}
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md shadow-sm transition-colors duration-200"
+              title="Refresh status"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // App is ready - show the ticket form
   return (
-    <div className="w-full bg-white rounded-md shadow-md text-sm">
+    <div className="w-full max-w-lg bg-white rounded-md shadow-md text-sm">
       <form onSubmit={handleSubmit} className="flex flex-col space-y-2 p-2">
         <div className="flex justify-between items-center mb-1">
           <h1 className="text-base font-semibold">Create a ticket</h1>
@@ -454,6 +1390,87 @@ function TicketForm() {
             </a>
           )}
         </div>
+
+        {/* User Selection */}
+        {allowUserSelection && (
+          <div>
+            <label className="block text-gray-700 text-xs font-bold pb-1">
+              User
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search for user..."
+                value={
+                  selectedUser
+                    ? UserService.formatUserDisplayNameCompact(
+                        selectedUser.name,
+                        selectedUser.site_name,
+                        selectedUser.client_name,
+                      )
+                    : userSearch
+                }
+                onChange={(e) => {
+                  if (selectedUser) {
+                    // Clear selection and start fresh search
+                    setSelectedUser(null);
+                    setUserSearch(e.target.value);
+                    handleUserSearch(e.target.value);
+                  } else {
+                    handleUserSearch(e.target.value);
+                  }
+                  setShowUserDropdown(true);
+                }}
+                onFocus={() => {
+                  if (selectedUser) {
+                    // Clear selection when clicking on selected user
+                    setSelectedUser(null);
+                    setUserSearch("");
+                  }
+                  setShowUserDropdown(true);
+                }}
+                className={`w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs py-1 ${
+                  selectedUser ? "cursor-pointer" : ""
+                }`}
+              />
+
+              {showUserDropdown && !selectedUser && (
+                <div className="user-dropdown absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
+                  {isLoadingUsers ? (
+                    <div className="p-2 text-xs text-gray-500">
+                      Loading users...
+                    </div>
+                  ) : availableUsers.length > 0 ? (
+                    availableUsers.map((user) => {
+                      const compactDisplay =
+                        UserService.formatUserDisplayNameCompact(
+                          user.name,
+                          user.site_name,
+                          user.client_name,
+                        );
+                      return (
+                        <div
+                          key={user.id}
+                          onClick={() => handleUserSelect(user)}
+                          className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="text-xs font-medium text-gray-900">
+                            {compactDisplay}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="p-2 text-xs text-gray-500">
+                      No users found
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div>
           <label
             htmlFor="summary"
@@ -492,220 +1509,70 @@ function TicketForm() {
           />
         </div>
 
-        {formSettings.showprojecttimebudget && (
-          <div>
-            <label
-              htmlFor="projecttimebudget"
-              className="block text-gray-700 text-xs font-bold pb-1"
-            >
-              Time Budget
-            </label>
-            <input
-              type="time"
-              tabIndex={3}
-              id="projecttimebudget"
-              className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
-              value={formData.projecttimebudget}
-              onChange={(e) => {
-                const [hours, minutes] = e.target.value.split(":");
-                const newTime = new Date();
-                newTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                setFormData((prev) => ({
-                  ...prev,
-                  projecttimebudget: formatTime(newTime),
-                }));
-              }}
-            />
-            <div className="w-full flex pt-0.5 gap-1">
-              <button
-                type="button"
-                className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
-                onClick={() => HandleAddTimeButton(0.25)}
-              >
-                + 15 Minutes
-              </button>
-              <button
-                type="button"
-                className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
-                onClick={() => HandleTimeButton(1)}
-              >
-                1 Hour
-              </button>
-              <button
-                type="button"
-                className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
-                onClick={() => HandleTimeButton(2)}
-              >
-                2 Hours
-              </button>
-            </div>
-          </div>
-        )}
-
-        {formSettings.showStartDate && (
-          <div>
-            <label
-              htmlFor="startdate"
-              className="block text-gray-700 text-xs font-bold pb-1"
-            >
-              Start Date
-            </label>
-            <input
-              type="date"
-              tabIndex={4}
-              id="startdate"
-              value={formData.startDate}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, startDate: e.target.value }))
-              }
-              className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
-            />
-            <div className="w-full flex pt-0.5 gap-1">
-              <button
-                type="button"
-                className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
-                onClick={() => HandleDateButton("start", 0)}
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
-                onClick={() => HandleDateButton("start", 1)}
-              >
-                Tomorrow
-              </button>
-            </div>
-          </div>
-        )}
-
-        {formSettings.showTargetDate && (
-          <div>
-            <label
-              htmlFor="targetdate"
-              className="block text-gray-700 text-xs font-bold pb-1"
-            >
-              Target Date
-            </label>
-            <input
-              type="date"
-              tabIndex={5}
-              id="targetdate"
-              value={formData.targetDate}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, targetDate: e.target.value }))
-              }
-              className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
-            />
-            <div className="w-full flex pt-0.5 gap-1">
-              <button
-                type="button"
-                className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
-                onClick={() => HandleDateButton("target", 0)}
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
-                onClick={() => HandleDateButton("target", 1)}
-              >
-                Tomorrow
-              </button>
-              <button
-                type="button"
-                className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
-                onClick={() => HandleDateButton("target", 7)}
-              >
-                Next Week
-              </button>
-            </div>
-          </div>
-        )}
-
-        {formSettings.showPriority && (
-          <div>
-            <label className="block text-gray-700 text-xs font-bold pb-1">
-              Priority
-            </label>
-            <select
-              title="Priority"
-              value={formData.priority_id}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  priority_id: e.target.value,
-                }))
-              }
-              className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-xs"
-            >
-              <option value="">Select Priority</option>
-              {PRIORITY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div className="space-y-2">
-          {formSettings.showCategory1 && (
-            <CategorySelect
-              typeId={1}
-              value={formData.category_1}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, category_1: value }))
-              }
-              label="Category 1"
-            />
-          )}
-          {formSettings.showCategory2 && (
-            <CategorySelect
-              typeId={2}
-              value={formData.category_2}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, category_2: value }))
-              }
-              label="Category 2"
-            />
-          )}
-          {formSettings.showCategory3 && (
-            <CategorySelect
-              typeId={3}
-              value={formData.category_3}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, category_3: value }))
-              }
-              label="Category 3"
-            />
-          )}
-          {formSettings.showCategory4 && (
-            <CategorySelect
-              typeId={4}
-              value={formData.category_4}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, category_4: value }))
-              }
-              label="Category 4"
-            />
-          )}
+        {/* Grid fields: Time Budget, Start Date, Target Date, Priority, Time Taken, Charge Type */}
+        <div className="grid grid-cols-2 gap-2">
+          {fieldOrder
+            .filter((field) =>
+              [
+                "projecttimebudget",
+                "startDate",
+                "targetDate",
+                "priority",
+                "timetaken",
+                "chargeType",
+              ].includes(field),
+            )
+            .map(renderFormField)}
         </div>
 
-        <button
-          type="submit"
-          tabIndex={6}
-          disabled={buttonText !== "Submit"}
-          className={`${
-            buttonText === "Success!"
-              ? "bg-green-500 hover:bg-green-600"
-              : buttonText === "Submitting..."
-                ? "bg-gray-500"
-                : "bg-blue-500 hover:bg-blue-600"
-          } text-white px-4 py-1.5 rounded-md shadow-sm mt-1 transition-colors duration-200`}
+        {/* Single column fields: Categories */}
+        <div className="space-y-2">
+          {fieldOrder
+            .filter((field) =>
+              ["category1", "category2", "category3", "category4"].includes(
+                field,
+              ),
+            )
+            .map(renderFormField)}
+        </div>
+
+        <div
+          className={`flex gap-2 mt-1 ${!formSettings.allowCompleteTickets ? "justify-center" : ""}`}
         >
-          {buttonText}
-        </button>
+          <button
+            type="submit"
+            tabIndex={6}
+            disabled={submitButtonText !== "Submit"}
+            className={`${
+              submitButtonText === "Success!"
+                ? "bg-green-500 hover:bg-green-600"
+                : submitButtonText === "Submitting..."
+                  ? "bg-gray-500"
+                  : "bg-blue-500 hover:bg-blue-600"
+            } text-white px-4 py-1.5 rounded-md shadow-sm transition-colors duration-200 ${
+              formSettings.allowCompleteTickets ? "flex-1" : "w-full"
+            }`}
+          >
+            {submitButtonText}
+          </button>
+          {formSettings.allowCompleteTickets && (
+            <button
+              type="button"
+              tabIndex={7}
+              disabled={completeButtonText !== "Complete"}
+              onClick={handleComplete}
+              className={`${
+                completeButtonText === "Success!"
+                  ? "bg-green-500 hover:bg-green-600"
+                  : completeButtonText === "Completing..."
+                    ? "bg-gray-500"
+                    : "bg-purple-500 hover:bg-purple-600"
+              } text-white px-4 py-1.5 rounded-md shadow-sm transition-colors duration-200 flex-1`}
+            >
+              {completeButtonText}
+            </button>
+          )}
+        </div>
         {status.message && (
           <div
             className={`text-sm ${status.type === "error" ? "text-red-600" : ""}`}
