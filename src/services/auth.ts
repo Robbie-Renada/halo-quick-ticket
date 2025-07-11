@@ -1,14 +1,17 @@
+import { generatePKCEParameters } from "../utils/pkce";
+
 interface TokenData {
   access_token: string;
   refresh_token?: string;
   expires_in: number;
   timestamp: number;
+  code_verifier?: string; // Store code verifier for potential future use
 }
 
 interface HaloConfig {
   apiUrl: string;
   clientId: string;
-  clientSecret: string;
+  // Removed clientSecret since PKCE doesn't require it
 }
 
 class HaloAuth {
@@ -17,6 +20,16 @@ class HaloAuth {
   constructor() {
     this.redirectUri = chrome.identity.getRedirectURL();
     console.log("Chrome extension redirect URI:", this.redirectUri);
+  }
+
+  // Generate cryptographically random state parameter
+  private generateState(): string {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return btoa(String.fromCharCode(...array))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
   }
 
   async getAuthToken(): Promise<string> {
@@ -39,20 +52,30 @@ class HaloAuth {
   }
 
   async authenticate(): Promise<string> {
-    const { apiUrl, clientId, clientSecret } = await this.getConfig();
+    const { apiUrl, clientId } = await this.getConfig();
 
-    if (!clientId || !clientSecret) {
+    if (!clientId) {
       throw new Error(
-        "Client ID and Client Secret must be configured. Please check extension settings.",
+        "Client ID must be configured. Please check extension settings.",
       );
     }
 
-    // Step 1: Get authorization code
+    // Generate PKCE parameters and state
+    const { codeVerifier, codeChallenge } = await generatePKCEParameters();
+    const state = this.generateState();
+
+    // Store state for validation
+    await chrome.storage.local.set({ oauth_state: state });
+
+    // Step 1: Get authorization code with PKCE and state
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: this.redirectUri,
       response_type: "code",
       scope: "read:tickets edit:tickets offline_access",
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256",
+      state: state,
     });
 
     const authUrl = `${apiUrl}/auth/authorize?${params.toString()}`;
@@ -67,15 +90,28 @@ class HaloAuth {
         throw new Error("Redirect URL is undefined");
       }
 
-      // Extract authorization code from URL
+      // Extract and validate state and authorization code from URL
       const url = new URL(redirectUrl);
+      const returnedState = url.searchParams.get("state");
       const code = url.searchParams.get("code");
+      const error = url.searchParams.get("error");
+
+      // Clean up stored state
+      await chrome.storage.local.remove(["oauth_state"]);
+
+      if (error) {
+        throw new Error(`OAuth error: ${error}`);
+      }
+
+      if (!returnedState || returnedState !== state) {
+        throw new Error("Invalid state parameter - possible CSRF attack");
+      }
 
       if (!code) {
         throw new Error("No authorization code received");
       }
 
-      // Step 2: Exchange code for tokens
+      // Step 2: Exchange code for tokens using PKCE
       const tokenResponse = await fetch(`${apiUrl}/auth/token`, {
         method: "POST",
         headers: {
@@ -84,13 +120,15 @@ class HaloAuth {
         body: new URLSearchParams({
           grant_type: "authorization_code",
           client_id: clientId,
-          client_secret: clientSecret,
           code: code,
           redirect_uri: this.redirectUri,
+          code_verifier: codeVerifier,
         }),
       });
 
       if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error("Token exchange error:", errorText);
         throw new Error("Failed to exchange code for token");
       }
 
@@ -101,6 +139,7 @@ class HaloAuth {
         refresh_token: tokenData.refresh_token,
         expires_in: tokenData.expires_in || 3600,
         timestamp: Date.now(),
+        code_verifier: codeVerifier,
       };
 
       await this.storeToken(token);
@@ -112,7 +151,7 @@ class HaloAuth {
   }
 
   private async refreshToken(refreshToken: string): Promise<string> {
-    const { apiUrl, clientId, clientSecret } = await this.getConfig();
+    const { apiUrl, clientId } = await this.getConfig();
 
     try {
       const response = await fetch(`${apiUrl}/auth/token`, {
@@ -123,13 +162,14 @@ class HaloAuth {
         body: new URLSearchParams({
           grant_type: "refresh_token",
           client_id: clientId,
-          client_secret: clientSecret,
           refresh_token: refreshToken,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to refresh token");
+        // If refresh fails, clear stored tokens to force re-authentication
+        await this.clearTokens();
+        throw new Error("Token refresh failed - please log in again");
       }
 
       const tokenData = await response.json();
@@ -145,23 +185,27 @@ class HaloAuth {
       return token.access_token;
     } catch (error) {
       console.error("Token refresh error:", error);
-      throw new Error("Failed to refresh token");
+      // Clear tokens on any refresh error
+      await this.clearTokens();
+      throw new Error("Authentication expired - please log in again");
     }
   }
 
   private async getConfig(): Promise<HaloConfig> {
-    const result = await chrome.storage.sync.get([
-      "apiUrl",
-      "clientId",
-      "clientSecret",
-    ]);
+    const result = await chrome.storage.sync.get(["apiUrl", "clientId"]);
     if (!result.apiUrl) {
       throw new Error("API URL not configured");
     }
+
+    // Validate that API URL is HTTPS
+    const url = new URL(result.apiUrl);
+    if (url.protocol !== "https:") {
+      throw new Error("API URL must use HTTPS for security");
+    }
+
     return {
       apiUrl: result.apiUrl.replace(/\/+$/, ""),
       clientId: result.clientId,
-      clientSecret: result.clientSecret,
     };
   }
 
@@ -174,18 +218,23 @@ class HaloAuth {
     await chrome.storage.local.set({ auth_token: token });
   }
 
+  private async clearTokens(): Promise<void> {
+    await chrome.storage.local.remove(["auth_token", "oauth_state"]);
+  }
+
   private isTokenExpired(token: TokenData): boolean {
     const expiryTime = token.timestamp + token.expires_in * 1000;
     return Date.now() >= expiryTime;
   }
 
   async signOut(): Promise<void> {
-    await chrome.storage.local.remove(["auth_token"]);
-
-    const { apiUrl } = await this.getConfig();
-    const logoutUrl = `${apiUrl}/auth/logout`;
+    // Clear all authentication data
+    await this.clearTokens();
 
     try {
+      const { apiUrl } = await this.getConfig();
+      const logoutUrl = `${apiUrl}/auth/logout`;
+
       await chrome.identity.launchWebAuthFlow({
         url: logoutUrl,
         interactive: false,

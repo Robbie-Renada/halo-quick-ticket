@@ -178,7 +178,6 @@ function TicketForm() {
         "selectedUser",
         "ticketTypeId",
         "clientId",
-        "clientSecret",
       ]);
 
       if (
@@ -190,8 +189,22 @@ function TicketForm() {
         return;
       }
 
-      if (!settings.clientId || !settings.clientSecret) {
+      if (!settings.clientId) {
         setAppState("unconfigured");
+        return;
+      }
+
+      // Validate API URL is HTTPS
+      try {
+        const url = new URL(settings.apiUrl);
+        if (url.protocol !== "https:") {
+          setAppState("unconfigured");
+          setAuthError("API URL must use HTTPS for security");
+          return;
+        }
+      } catch (error) {
+        setAppState("unconfigured");
+        setAuthError("Invalid API URL format");
         return;
       }
 
