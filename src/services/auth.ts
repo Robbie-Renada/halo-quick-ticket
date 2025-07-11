@@ -19,7 +19,7 @@ class HaloAuth {
 
   constructor() {
     this.redirectUri = chrome.identity.getRedirectURL();
-    console.log("Chrome extension redirect URI:", this.redirectUri);
+    // console.log("Chrome extension redirect URI:", this.redirectUri);
   }
 
   // Generate cryptographically random state parameter
@@ -139,7 +139,6 @@ class HaloAuth {
         refresh_token: tokenData.refresh_token,
         expires_in: tokenData.expires_in || 3600,
         timestamp: Date.now(),
-        code_verifier: codeVerifier,
       };
 
       await this.storeToken(token);
@@ -240,7 +239,7 @@ class HaloAuth {
         interactive: false,
       });
     } catch (error) {
-      console.log("Logout flow completed");
+      // console.log("Logout flow completed");
     }
   }
 }
