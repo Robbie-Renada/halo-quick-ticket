@@ -335,10 +335,7 @@ function TicketForm() {
         );
       }
 
-      // Load initial users if user selection is allowed
-      if (settings.allowUserSelection) {
-        searchUsers("");
-      }
+      // Note: Initial user search will be triggered when app state becomes "ready"
     };
 
     loadSavedData().then(() => {
@@ -439,6 +436,11 @@ function TicketForm() {
     } catch (error) {
       console.error("Failed to fetch users:", error);
       setAvailableUsers([]);
+      // If authentication fails, set app state to unauthenticated
+      if (error instanceof Error && error.message.includes("authentication")) {
+        setAppState("unauthenticated");
+        setAuthError("Authentication expired. Please log in again.");
+      }
     } finally {
       setIsLoadingUsers(false);
     }
@@ -708,8 +710,9 @@ function TicketForm() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Token may have expired, recheck app state
-          await checkAppState();
+          // Token may have expired, set app state to unauthenticated
+          setAppState("unauthenticated");
+          setAuthError("Authentication expired. Please log in again.");
           return;
         }
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -759,8 +762,9 @@ function TicketForm() {
       setCategories(organizedCategories);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
-      // If there's an error, recheck app state to ensure we're still authenticated
-      await checkAppState();
+      // If there's an error, assume authentication issue and set to unauthenticated
+      setAppState("unauthenticated");
+      setAuthError("Failed to load categories. Please log in again.");
     }
   }, [checkAppState]);
 
@@ -785,8 +789,9 @@ function TicketForm() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Token may have expired, recheck app state
-          await checkAppState();
+          // Token may have expired, set app state to unauthenticated
+          setAppState("unauthenticated");
+          setAuthError("Authentication expired. Please log in again.");
           return;
         }
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -796,8 +801,9 @@ function TicketForm() {
       setChargeTypes(data);
     } catch (error) {
       console.error("Failed to fetch charge types:", error);
-      // If there's an error, recheck app state to ensure we're still authenticated
-      await checkAppState();
+      // If there's an error, assume authentication issue and set to unauthenticated
+      setAppState("unauthenticated");
+      setAuthError("Failed to load charge types. Please log in again.");
     }
   }, [checkAppState]);
 
@@ -805,8 +811,12 @@ function TicketForm() {
     if (appState === "ready") {
       fetchCategories();
       fetchChargeTypes();
+      // Load initial users if user selection is allowed
+      if (allowUserSelection) {
+        searchUsers("");
+      }
     }
-  }, [appState, fetchCategories, fetchChargeTypes]);
+  }, [appState, fetchCategories, fetchChargeTypes, allowUserSelection]);
 
   // Close user dropdown when clicking outside
   useEffect(() => {
@@ -1225,40 +1235,23 @@ function TicketForm() {
   // Render different screens based on app state
   if (appState === "loading") {
     return (
-      <div className="w-full max-w-lg bg-white rounded-md shadow-md text-sm">
-        <div className="flex flex-col items-center justify-center p-6">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
+      <div className="w-full min-h-[470px] bg-white rounded-md shadow-md text-sm flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
+        <p className="text-gray-600">Loading...</p>
       </div>
     );
   }
 
   if (appState === "unconfigured") {
     return (
-      <div className="w-full max-w-lg bg-white rounded-md shadow-md text-sm">
+      <div className="w-full min-h-[470px] bg-white rounded-md shadow-md text-sm flex flex-col items-center justify-center">
         <div className="flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
-            <svg
-              className="w-6 h-6 text-yellow-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
           <h2 className="text-lg font-semibold text-gray-900 mb-2">
             Extension Setup Required
           </h2>
           <p className="text-gray-600 mb-4">
             Before you can create tickets, you need to configure your Halo
-            connection settings.
+            settings.
           </p>
           <div className="flex gap-2">
             <button
@@ -1294,23 +1287,8 @@ function TicketForm() {
 
   if (appState === "unauthenticated") {
     return (
-      <div className="w-full max-w-lg bg-white rounded-md shadow-md text-sm">
+      <div className="w-full min-h-[470px] bg-white rounded-md shadow-md text-sm flex flex-col items-center justify-center">
         <div className="flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-            <svg
-              className="w-6 h-6 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m0 0v2m0-2h2m-2 0H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
           <h2 className="text-lg font-semibold text-gray-900 mb-2">
             Authentication Required
           </h2>
@@ -1509,31 +1487,9 @@ function TicketForm() {
           />
         </div>
 
-        {/* Grid fields: Time Budget, Start Date, Target Date, Priority, Time Taken, Charge Type */}
+        {/* All fields in 2-column grid respecting fieldOrder */}
         <div className="grid grid-cols-2 gap-2">
-          {fieldOrder
-            .filter((field) =>
-              [
-                "projecttimebudget",
-                "startDate",
-                "targetDate",
-                "priority",
-                "timetaken",
-                "chargeType",
-              ].includes(field),
-            )
-            .map(renderFormField)}
-        </div>
-
-        {/* Single column fields: Categories */}
-        <div className="space-y-2">
-          {fieldOrder
-            .filter((field) =>
-              ["category1", "category2", "category3", "category4"].includes(
-                field,
-              ),
-            )
-            .map(renderFormField)}
+          {fieldOrder.map(renderFormField)}
         </div>
 
         <div

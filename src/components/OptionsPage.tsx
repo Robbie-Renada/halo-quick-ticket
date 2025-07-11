@@ -364,6 +364,8 @@ function OptionsPage() {
     } catch (error) {
       console.error("Failed to fetch users:", error);
       setAvailableUsers([]);
+      // Don't trigger authentication from the options page
+      // Let the main ticket form handle authentication
     } finally {
       setIsLoadingUsers(false);
     }
@@ -404,22 +406,30 @@ function OptionsPage() {
   const fetchTicketTypes = async () => {
     setIsLoadingTicketTypes(true);
     try {
-      const token = await HaloAuth.getAuthToken();
-      if (!token || !settings.apiUrl) {
-        throw new Error("Missing authentication or API URL");
+      // Try to get stored token without triggering authentication
+      const storedToken = await chrome.storage.local.get(["auth_token"]);
+      if (!storedToken.auth_token || !settings.apiUrl) {
+        // No stored token or API URL, just fail silently
+        setAvailableTicketTypes([]);
+        return;
       }
 
       const response = await fetch(
         `${settings.apiUrl}api/TicketType?showall=true&showinactive=true`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${storedToken.auth_token.access_token}`,
             "Content-Type": "application/json",
           },
         },
       );
 
       if (!response.ok) {
+        // If authentication fails, just clear the list without triggering auth
+        if (response.status === 401) {
+          setAvailableTicketTypes([]);
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -457,7 +467,7 @@ function OptionsPage() {
               </h2>
               <ol className="text-gray-600 list-decimal list-inside text-sm space-y-1">
                 <li>
-                  Navigate to HaloPSA:{" "}
+                  Navigate to Halo:{" "}
                   <code className="text-xs bg-gray-100 px-1 rounded">
                     Config / Integrations / HaloAPI / View Applications / New
                   </code>
@@ -512,7 +522,7 @@ function OptionsPage() {
                     htmlFor="apiUrl"
                     className="block text-gray-700 text-sm font-medium mb-1"
                   >
-                    HaloPSA Base URL:
+                    Halo Base URL:
                   </label>
                   <input
                     type="url"
@@ -521,7 +531,7 @@ function OptionsPage() {
                     value={settings.apiUrl}
                     onChange={handleInputChange}
                     className="w-full border-gray-300 rounded-md shadow-sm text-sm"
-                    placeholder="https://your-instance.halopsa.com"
+                    placeholder="https://your-instance.Halo.com"
                   />
                 </div>
 

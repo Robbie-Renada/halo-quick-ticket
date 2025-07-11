@@ -53,6 +53,9 @@ class UserService {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Authentication failed or expired");
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
