@@ -912,13 +912,13 @@ function TicketForm() {
 
     return (
       <div>
-        <label className="block text-gray-700 text-xs font-medium mb-1">
+        <label className="block text-gray-500 text-xs font-medium pb-1">
           {label}
         </label>
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-xs"
+          className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
           title={label}
         >
           <option value="">Select {label}</option>
@@ -941,7 +941,7 @@ function TicketForm() {
             <div key={fieldKey}>
               <label
                 htmlFor="projecttimebudget"
-                className="block text-gray-700 text-xs font-bold pb-1"
+                className="block text-gray-500 text-xs font-medium pb-1"
               >
                 Time Budget
               </label>
@@ -949,7 +949,7 @@ function TicketForm() {
                 type="time"
                 tabIndex={3}
                 id="projecttimebudget"
-                className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
+                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
                 value={formData.projecttimebudget}
                 onChange={(e) => {
                   const [hours, minutes] = e.target.value.split(":");
@@ -964,21 +964,21 @@ function TicketForm() {
               <div className="w-full flex pt-0.5 gap-1">
                 <button
                   type="button"
-                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
+                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/3 hover:bg-gray-100 transition-colors"
                   onClick={() => HandleAddTimeButton(0.25)}
                 >
                   + 15 Minutes
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
+                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/3 hover:bg-gray-100 transition-colors"
                   onClick={() => HandleTimeButton(1)}
                 >
                   1 Hour
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
+                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/3 hover:bg-gray-100 transition-colors"
                   onClick={() => HandleTimeButton(2)}
                 >
                   2 Hours
@@ -994,7 +994,7 @@ function TicketForm() {
             <div key={fieldKey}>
               <label
                 htmlFor="startdate"
-                className="block text-gray-700 text-xs font-bold pb-1"
+                className="block text-gray-500 text-xs font-medium pb-1"
               >
                 Start Date
               </label>
@@ -1009,19 +1009,19 @@ function TicketForm() {
                     startDate: e.target.value,
                   }))
                 }
-                className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
+                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
               />
               <div className="w-full flex pt-0.5 gap-1">
                 <button
                   type="button"
-                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
+                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/2 hover:bg-gray-100 transition-colors"
                   onClick={() => HandleDateButton("start", 0)}
                 >
                   Today
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
+                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/2 hover:bg-gray-100 transition-colors"
                   onClick={() => HandleDateButton("start", 1)}
                 >
                   Tomorrow
@@ -1037,7 +1037,7 @@ function TicketForm() {
             <div key={fieldKey}>
               <label
                 htmlFor="targetdate"
-                className="block text-gray-700 text-xs font-bold pb-1"
+                className="block text-gray-500 text-xs font-medium pb-1"
               >
                 Target Date
               </label>
@@ -1052,26 +1052,26 @@ function TicketForm() {
                     targetDate: e.target.value,
                   }))
                 }
-                className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
+                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
               />
               <div className="w-full flex pt-0.5 gap-1">
                 <button
                   type="button"
-                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
+                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/2 hover:bg-gray-100 transition-colors"
                   onClick={() => HandleDateButton("target", 0)}
                 >
                   Today
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
+                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/2 hover:bg-gray-100 transition-colors"
                   onClick={() => HandleDateButton("target", 1)}
                 >
                   Tomorrow
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/2 hover:bg-gray-300"
+                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/2 hover:bg-gray-100 transition-colors"
                   onClick={() => HandleDateButton("target", 7)}
                 >
                   Next Week
@@ -1085,7 +1085,7 @@ function TicketForm() {
         return (
           formSettings.showPriority && (
             <div key={fieldKey}>
-              <label className="block text-gray-700 text-xs font-bold pb-1">
+              <label className="block text-gray-500 text-xs font-medium pb-1">
                 Priority
               </label>
               <select
@@ -1097,7 +1097,7 @@ function TicketForm() {
                     priority_id: e.target.value,
                   }))
                 }
-                className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-xs"
+                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
               >
                 <option value="">Select Priority</option>
                 {PRIORITY_OPTIONS.map((option) => (
@@ -1176,7 +1176,7 @@ function TicketForm() {
             <div key={fieldKey}>
               <label
                 htmlFor="timetaken"
-                className="block text-gray-700 text-xs font-bold pb-1"
+                className="block text-gray-500 text-xs font-medium pb-1"
               >
                 Time Taken
               </label>
@@ -1184,7 +1184,7 @@ function TicketForm() {
                 type="time"
                 tabIndex={3}
                 id="timetaken"
-                className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs"
+                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
                 value={formData.timetaken}
                 onChange={(e) => {
                   const [hours, minutes] = e.target.value.split(":");
@@ -1199,7 +1199,7 @@ function TicketForm() {
               <div className="w-full flex pt-0.5 gap-1">
                 <button
                   type="button"
-                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
+                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/3 hover:bg-gray-100 transition-colors"
                   onClick={() => {
                     const [hours, minutes] = formData.timetaken.split(":");
                     const currentTime = new Date();
@@ -1220,7 +1220,7 @@ function TicketForm() {
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
+                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/3 hover:bg-gray-100 transition-colors"
                   onClick={() => {
                     const newTime = new Date();
                     newTime.setHours(1, 0, 0, 0);
@@ -1234,7 +1234,7 @@ function TicketForm() {
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-200 text-gray-500 rounded-md shadow-sm text-[10px] w-1/3 hover:bg-gray-300"
+                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/3 hover:bg-gray-100 transition-colors"
                   onClick={() => {
                     const newTime = new Date();
                     newTime.setHours(2, 0, 0, 0);
@@ -1255,7 +1255,7 @@ function TicketForm() {
         return (
           formSettings.showChargeType && (
             <div key={fieldKey}>
-              <label className="block text-gray-700 text-xs font-bold pb-1">
+              <label className="block text-gray-500 text-xs font-medium pb-1">
                 Charge Type
               </label>
               <select
@@ -1267,7 +1267,7 @@ function TicketForm() {
                     chargeType: e.target.value,
                   }))
                 }
-                className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-xs"
+                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
               >
                 <option value="">Select Charge Type</option>
                 {chargeTypes.map((chargeType) => (
@@ -1393,16 +1393,16 @@ function TicketForm() {
 
   // App is ready - show the ticket form
   return (
-    <div className="w-full max-w-lg bg-white text-sm">
-      <form onSubmit={handleSubmit} className="flex flex-col space-y-2 p-2">
-        <div className="flex justify-between items-center mb-1">
-          <h1 className="text-base font-semibold">Create a ticket</h1>
+    <div className="w-full max-w-lg text-sm">
+      <form onSubmit={handleSubmit} className="flex flex-col space-y-3 p-3">
+        <div className="flex justify-between items-center pb-2 mb-1 border-b border-gray-100">
+          <h1 className="text-sm font-semibold text-gray-800">Create a ticket</h1>
           {lastTicket && (
             <a
               href={lastTicket.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full transition-colors"
             >
               <svg
                 className="w-3 h-3"
@@ -1417,7 +1417,7 @@ function TicketForm() {
                   d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                 />
               </svg>
-              Open in Halo
+              Last ticket
             </a>
           )}
         </div>
@@ -1425,7 +1425,7 @@ function TicketForm() {
         {/* User Selection */}
         {allowUserSelection && (
           <div>
-            <label className="block text-gray-700 text-xs font-bold pb-1">
+            <label className="block text-gray-500 text-xs font-medium pb-1">
               User
             </label>
             <div className="relative">
@@ -1460,13 +1460,13 @@ function TicketForm() {
                   }
                   setShowUserDropdown(true);
                 }}
-                className={`w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs py-1 ${
+                className={`w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors py-1 ${
                   selectedUser ? "cursor-pointer" : ""
                 }`}
               />
 
               {showUserDropdown && !selectedUser && (
-                <div className="user-dropdown absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
+                <div className="user-dropdown absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto mt-1">
                   {isLoadingUsers ? (
                     <div className="p-2 text-xs text-gray-500">
                       Loading users...
@@ -1483,7 +1483,7 @@ function TicketForm() {
                         <div
                           key={user.id}
                           onClick={() => handleUserSelect(user)}
-                          className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-b-0 transition-colors"
                         >
                           <div className="text-xs font-medium text-gray-900">
                             {compactDisplay}
@@ -1505,7 +1505,7 @@ function TicketForm() {
         <div>
           <label
             htmlFor="summary"
-            className="block text-gray-700 text-xs font-bold pb-1"
+            className="block text-gray-500 text-xs font-medium pb-1"
           >
             Summary
           </label>
@@ -1513,7 +1513,7 @@ function TicketForm() {
             type="text"
             tabIndex={1}
             id="summary"
-            className="w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs py-1"
+            className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors py-1"
             placeholder="Brief Task Description"
             value={formData.summary}
             onChange={(e) =>
@@ -1524,14 +1524,14 @@ function TicketForm() {
         <div className="flex-grow">
           <label
             htmlFor="details"
-            className="block text-gray-700 text-xs font-bold pb-1"
+            className="block text-gray-500 text-xs font-medium pb-1"
           >
             Details
           </label>
           <textarea
             tabIndex={2}
             id="details"
-            className="h-full min-h-[90px] w-full bg-gray-50 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs py-1"
+            className="h-full min-h-[70px] w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors py-1"
             placeholder="Additional Task Information"
             value={formData.details}
             onChange={(e) =>
@@ -1541,12 +1541,13 @@ function TicketForm() {
         </div>
 
         {/* All fields in 2-column grid respecting fieldOrder */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="border-t border-gray-100 pt-2"></div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
           {fieldOrder.map(renderFormField)}
         </div>
 
         <div
-          className={`flex gap-2 mt-1 ${!formSettings.allowCompleteTickets ? "justify-center" : ""}`}
+          className={`flex gap-2 mt-2 ${!formSettings.allowCompleteTickets ? "justify-center" : ""}`}
         >
           <button
             type="submit"
@@ -1554,11 +1555,11 @@ function TicketForm() {
             disabled={submitButtonText !== "Submit"}
             className={`${
               submitButtonText === "Success!"
-                ? "bg-green-500 hover:bg-green-600"
+                ? "bg-green-500 hover:bg-green-600 shadow-green-200"
                 : submitButtonText === "Submitting..."
-                  ? "bg-gray-500"
-                  : "bg-blue-500 hover:bg-blue-600"
-            } text-white px-4 py-1.5 rounded-md shadow-sm transition-colors duration-200 ${
+                  ? "bg-gray-400"
+                  : "bg-blue-500 hover:bg-blue-600 shadow-blue-200"
+            } text-white font-medium px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ${
               formSettings.allowCompleteTickets ? "flex-1" : "w-full"
             }`}
           >
@@ -1572,11 +1573,11 @@ function TicketForm() {
               onClick={handleComplete}
               className={`${
                 completeButtonText === "Success!"
-                  ? "bg-green-500 hover:bg-green-600"
+                  ? "bg-green-500 hover:bg-green-600 shadow-green-200"
                   : completeButtonText === "Completing..."
-                    ? "bg-gray-500"
-                    : "bg-purple-500 hover:bg-purple-600"
-              } text-white px-4 py-1.5 rounded-md shadow-sm transition-colors duration-200 flex-1`}
+                    ? "bg-gray-400"
+                    : "bg-purple-500 hover:bg-purple-600 shadow-purple-200"
+              } text-white font-medium px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex-1`}
             >
               {completeButtonText}
             </button>
@@ -1584,7 +1585,7 @@ function TicketForm() {
         </div>
         {status.message && (
           <div
-            className={`text-sm ${status.type === "error" ? "text-red-600" : ""}`}
+            className={`text-xs px-3 py-2 rounded-lg ${status.type === "error" ? "text-red-700 bg-red-50 border border-red-100" : "text-green-700 bg-green-50 border border-green-100"}`}
             dangerouslySetInnerHTML={{ __html: status.message }}
           />
         )}
