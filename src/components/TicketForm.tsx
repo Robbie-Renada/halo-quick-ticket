@@ -37,6 +37,7 @@ interface TicketPayload {
   new_actioncode?: string;
   status_id?: number;
   _newticket_quickclose?: boolean;
+  agent_id?: number;
 }
 
 interface TicketResponse {
@@ -146,6 +147,10 @@ function TicketForm() {
   >({});
 
   const [chargeTypes, setChargeTypes] = useState<ChargeType[]>([]);
+
+  // Auto-assign state
+  const [autoAssignToMe, setAutoAssignToMe] = useState(false);
+  const [myAgentId, setMyAgentId] = useState<number | null>(null);
 
   // User selection state
   const [allowUserSelection, setAllowUserSelection] = useState(false);
@@ -287,6 +292,7 @@ function TicketForm() {
           "showPriority",
           "allowUserSelection",
           "allowCompleteTickets",
+          "autoAssignToMe",
           "fieldOrder",
           "selectedUser",
         ]),
@@ -335,6 +341,9 @@ function TicketForm() {
 
       // Set user selection setting
       setAllowUserSelection(settings.allowUserSelection ?? false);
+
+      // Set auto-assign setting
+      setAutoAssignToMe(settings.autoAssignToMe ?? false);
 
       // Set selected user from settings if available
       if (settings.selectedUser) {
@@ -540,6 +549,7 @@ function TicketForm() {
         category_4: formData.category_4,
         priority_id: formData.priority_id,
         new_actioncode: formData.chargeType || "0",
+        ...(autoAssignToMe && myAgentId ? { agent_id: myAgentId } : {}),
       };
 
       const response = await fetch(`${settings.apiUrl}api/tickets`, {
@@ -650,6 +660,7 @@ function TicketForm() {
         category_4: formData.category_4,
         priority_id: formData.priority_id,
         new_actioncode: formData.chargeType || "0",
+        ...(autoAssignToMe && myAgentId ? { agent_id: myAgentId } : {}),
       };
 
       const response = await fetch(`${settings.apiUrl}api/tickets`, {
@@ -820,6 +831,31 @@ function TicketForm() {
     }
   }, [checkAppState]);
 
+  // Fetch the current agent's ID for auto-assign
+  const fetchMyAgentId = useCallback(async () => {
+    try {
+      const token = await HaloAuth.getAuthToken();
+      const settings = await chrome.storage.sync.get(["apiUrl"]);
+
+      if (!token || !settings.apiUrl) return;
+
+      const response = await fetch(`${settings.apiUrl}api/Agent/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      if (data.id) {
+        setMyAgentId(data.id);
+      }
+    } catch (error) {
+      console.error("Failed to fetch agent ID:", error);
+    }
+  }, []);
+
   useEffect(() => {
     if (appState === "ready") {
       fetchCategories();
@@ -828,8 +864,12 @@ function TicketForm() {
       if (allowUserSelection) {
         searchUsers("");
       }
+      // Fetch agent ID if auto-assign is enabled
+      if (autoAssignToMe) {
+        fetchMyAgentId();
+      }
     }
-  }, [appState, fetchCategories, fetchChargeTypes, allowUserSelection]);
+  }, [appState, fetchCategories, fetchChargeTypes, allowUserSelection, autoAssignToMe, fetchMyAgentId]);
 
   // Close user dropdown when clicking outside
   useEffect(() => {
@@ -1248,7 +1288,7 @@ function TicketForm() {
   // Render different screens based on app state
   if (appState === "loading") {
     return (
-      <div className="w-full min-h-[470px] bg-white rounded-md shadow-md text-sm flex flex-col items-center justify-center">
+      <div className="w-full min-h-[470px] bg-white text-sm flex flex-col items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
         <p className="text-gray-600">Loading...</p>
       </div>
@@ -1257,7 +1297,7 @@ function TicketForm() {
 
   if (appState === "unconfigured") {
     return (
-      <div className="w-full min-h-[470px] bg-white rounded-md shadow-md text-sm flex flex-col items-center justify-center">
+      <div className="w-full min-h-[470px] bg-white text-sm flex flex-col items-center justify-center">
         <div className="flex flex-col items-center justify-center p-6 text-center">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">
             Extension Setup Required
@@ -1300,7 +1340,7 @@ function TicketForm() {
 
   if (appState === "unauthenticated") {
     return (
-      <div className="w-full min-h-[470px] bg-white rounded-md shadow-md text-sm flex flex-col items-center justify-center">
+      <div className="w-full min-h-[470px] bg-white text-sm flex flex-col items-center justify-center">
         <div className="flex flex-col items-center justify-center p-6 text-center">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">
             Authentication Required
@@ -1353,7 +1393,7 @@ function TicketForm() {
 
   // App is ready - show the ticket form
   return (
-    <div className="w-full max-w-lg bg-white rounded-md shadow-md text-sm">
+    <div className="w-full max-w-lg bg-white text-sm">
       <form onSubmit={handleSubmit} className="flex flex-col space-y-2 p-2">
         <div className="flex justify-between items-center mb-1">
           <h1 className="text-base font-semibold">Create a ticket</h1>

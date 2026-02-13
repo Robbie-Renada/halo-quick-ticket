@@ -19,6 +19,7 @@ interface HaloSettings {
   showPriority: boolean;
   allowUserSelection: boolean;
   allowCompleteTickets: boolean;
+  autoAssignToMe: boolean;
   fieldOrder: string[];
 }
 
@@ -47,6 +48,7 @@ function OptionsPage() {
     showPriority: true,
     allowUserSelection: false,
     allowCompleteTickets: false,
+    autoAssignToMe: false,
     fieldOrder: [
       "projecttimebudget",
       "startDate",
@@ -79,6 +81,7 @@ function OptionsPage() {
     showPriority: true,
     allowUserSelection: false,
     allowCompleteTickets: false,
+    autoAssignToMe: false,
     fieldOrder: [
       "projecttimebudget",
       "startDate",
@@ -137,6 +140,7 @@ function OptionsPage() {
       showPriority: settings.showPriority,
       allowUserSelection: settings.allowUserSelection,
       allowCompleteTickets: settings.allowCompleteTickets,
+      autoAssignToMe: settings.autoAssignToMe,
       fieldOrder: settings.fieldOrder,
     };
 
@@ -155,6 +159,7 @@ function OptionsPage() {
       showPriority: savedSettings.showPriority,
       allowUserSelection: savedSettings.allowUserSelection,
       allowCompleteTickets: savedSettings.allowCompleteTickets,
+      autoAssignToMe: savedSettings.autoAssignToMe,
       fieldOrder: savedSettings.fieldOrder,
     };
 
@@ -257,6 +262,7 @@ function OptionsPage() {
         "showPriority",
         "allowUserSelection",
         "allowCompleteTickets",
+        "autoAssignToMe",
         "fieldOrder",
       ]);
 
@@ -277,6 +283,7 @@ function OptionsPage() {
         showPriority: result.showPriority ?? true,
         allowUserSelection: result.allowUserSelection ?? false,
         allowCompleteTickets: result.allowCompleteTickets ?? false,
+        autoAssignToMe: result.autoAssignToMe ?? false,
         fieldOrder: result.fieldOrder || [
           "projecttimebudget",
           "startDate",
@@ -1144,6 +1151,29 @@ function OptionsPage() {
                     <p className="text-xs text-gray-500 mt-1 ml-6">
                       When enabled, a "Complete" button will appear alongside
                       the "Submit" button.
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="autoAssignToMe"
+                        name="autoAssignToMe"
+                        checked={settings.autoAssignToMe}
+                        onChange={handleCheckboxChange}
+                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      />
+                      <label
+                        htmlFor="autoAssignToMe"
+                        className="ml-2 text-sm text-gray-700"
+                      >
+                        Auto-assign tickets to me
+                      </label>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1 ml-6">
+                      When enabled, newly created tickets will be automatically
+                      assigned to your agent account.
                     </p>
                   </div>
                 </div>
