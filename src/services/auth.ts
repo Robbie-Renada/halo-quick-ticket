@@ -72,7 +72,7 @@ class HaloAuth {
       client_id: clientId,
       redirect_uri: this.redirectUri,
       response_type: "code",
-      scope: "read:tickets edit:tickets offline_access",
+      scope: "read:tickets edit:tickets read:customers offline_access",
       code_challenge: codeChallenge,
       code_challenge_method: "S256",
       state: state,

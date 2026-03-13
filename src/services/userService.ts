@@ -45,7 +45,7 @@ class UserService {
         search: search,
       });
 
-      const response = await fetch(`${apiUrl}api/Users?${params.toString()}`, {
+      const response = await fetch(`${apiUrl}/api/Users?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
