@@ -8,7 +8,7 @@ import SetupStepper from "./SetupStepper";
 import ApiConfigStep from "./ApiConfigStep";
 import AuthStep from "./AuthStep";
 import UserConfigPanel from "./UserConfigPanel";
-import FieldOrderManager from "./FieldOrderManager";
+import FieldOrderManager, { FIELD_SETTING_KEY } from "./FieldOrderManager";
 import AdvancedOptionsPanel from "./AdvancedOptionsPanel";
 import SaveBar from "./SaveBar";
 
@@ -361,30 +361,9 @@ function OptionsPage() {
     }));
   };
 
-  const moveField = (dragIndex: number, hoverIndex: number) => {
-    const newOrder = [...settings.fieldOrder];
-    const [draggedItem] = newOrder.splice(dragIndex, 1);
-    newOrder.splice(hoverIndex, 0, draggedItem);
-    handleFieldOrderChange(newOrder);
-  };
-
   const handleToggleField = (fieldKey: string, enabled: boolean) => {
-    const mapping: Record<string, keyof HaloSettings> = {
-      ticketType: "showTicketType",
-      autoAssign: "showAutoAssign",
-      projecttimebudget: "showTimeBudget",
-      startDate: "showStartDate",
-      targetDate: "showTargetDate",
-      priority: "showPriority",
-      category1: "showCategory1",
-      category2: "showCategory2",
-      category3: "showCategory3",
-      category4: "showCategory4",
-      timetaken: "showTimeTaken",
-      chargeType: "showChargeType",
-    };
-    const settingKey = mapping[fieldKey] || "showStartDate";
-    setSettings((prev) => ({ ...prev, [settingKey]: enabled }));
+    const settingKey = FIELD_SETTING_KEY[fieldKey];
+    if (settingKey) setSettings((prev) => ({ ...prev, [settingKey]: enabled }));
   };
 
   const handleTicketTypeSelect = (ticketTypeId: string) => {
@@ -523,7 +502,7 @@ function OptionsPage() {
               <FieldOrderManager
                 fieldOrder={settings.fieldOrder}
                 settings={settings}
-                onMoveField={moveField}
+                onFieldOrderChange={handleFieldOrderChange}
                 onToggleField={handleToggleField}
                 onReset={resetFieldOrder}
               />
