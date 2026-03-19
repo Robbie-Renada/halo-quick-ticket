@@ -444,18 +444,15 @@ function FormFields({
               <label className="block text-gray-500 text-xs font-medium pb-1">
                 Assign to Me
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  id="autoAssignToMe"
-                  checked={autoAssignToMe}
-                  onChange={(e) => onAutoAssignChange(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                />
-                <span className="text-xs text-gray-600">
-                  {autoAssignToMe ? "Enabled" : "Disabled"}
-                </span>
-              </label>
+              <select
+                title="Assign to Me"
+                value={autoAssignToMe ? "yes" : "no"}
+                onChange={(e) => onAutoAssignChange(e.target.value === "yes")}
+                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
+              >
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
             </div>
           )
         );
