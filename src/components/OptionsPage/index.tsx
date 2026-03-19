@@ -8,7 +8,7 @@ import SetupStepper from "./SetupStepper";
 import ApiConfigStep from "./ApiConfigStep";
 import AuthStep from "./AuthStep";
 import UserConfigPanel from "./UserConfigPanel";
-import FieldOrderManager from "./FieldOrderManager";
+import FieldOrderManager, { FIELD_SETTING_KEY } from "./FieldOrderManager";
 import AdvancedOptionsPanel from "./AdvancedOptionsPanel";
 import SaveBar from "./SaveBar";
 
@@ -75,49 +75,12 @@ function OptionsPage() {
     enabled: isAuthenticated,
   });
 
-  // Check if there are unsaved changes
+  // Check if there are unsaved changes (excludes apiUrl/clientId, saved separately)
   const hasUnsavedChanges = () => {
     if (!isAuthenticated) return false;
-
-    const settingsToCompare = {
-      selectedUser: settings.selectedUser,
-      ticketTypeId: settings.ticketTypeId,
-      showStartDate: settings.showStartDate,
-      showTargetDate: settings.showTargetDate,
-      showTimeBudget: settings.showTimeBudget,
-      showTimeTaken: settings.showTimeTaken,
-      showChargeType: settings.showChargeType,
-      showCategory1: settings.showCategory1,
-      showCategory2: settings.showCategory2,
-      showCategory3: settings.showCategory3,
-      showCategory4: settings.showCategory4,
-      showPriority: settings.showPriority,
-      allowUserSelection: settings.allowUserSelection,
-      allowCompleteTickets: settings.allowCompleteTickets,
-      autoAssignToMe: settings.autoAssignToMe,
-      fieldOrder: settings.fieldOrder,
-    };
-
-    const savedToCompare = {
-      selectedUser: savedSettings.selectedUser,
-      ticketTypeId: savedSettings.ticketTypeId,
-      showStartDate: savedSettings.showStartDate,
-      showTargetDate: savedSettings.showTargetDate,
-      showTimeBudget: savedSettings.showTimeBudget,
-      showTimeTaken: savedSettings.showTimeTaken,
-      showChargeType: savedSettings.showChargeType,
-      showCategory1: savedSettings.showCategory1,
-      showCategory2: savedSettings.showCategory2,
-      showCategory3: savedSettings.showCategory3,
-      showCategory4: savedSettings.showCategory4,
-      showPriority: savedSettings.showPriority,
-      allowUserSelection: savedSettings.allowUserSelection,
-      allowCompleteTickets: savedSettings.allowCompleteTickets,
-      autoAssignToMe: savedSettings.autoAssignToMe,
-      fieldOrder: savedSettings.fieldOrder,
-    };
-
-    return JSON.stringify(settingsToCompare) !== JSON.stringify(savedToCompare);
+    const { apiUrl: _a1, clientId: _c1, ...rest } = settings;
+    const { apiUrl: _a2, clientId: _c2, ...savedRest } = savedSettings;
+    return JSON.stringify(rest) !== JSON.stringify(savedRest);
   };
 
   // Warning when leaving with unsaved changes
@@ -398,30 +361,9 @@ function OptionsPage() {
     }));
   };
 
-  const moveField = (dragIndex: number, hoverIndex: number) => {
-    const newOrder = [...settings.fieldOrder];
-    const [draggedItem] = newOrder.splice(dragIndex, 1);
-    newOrder.splice(hoverIndex, 0, draggedItem);
-    handleFieldOrderChange(newOrder);
-  };
-
   const handleToggleField = (fieldKey: string, enabled: boolean) => {
-    const mapping: Record<string, keyof HaloSettings> = {
-      ticketType: "showTicketType",
-      autoAssign: "showAutoAssign",
-      projecttimebudget: "showTimeBudget",
-      startDate: "showStartDate",
-      targetDate: "showTargetDate",
-      priority: "showPriority",
-      category1: "showCategory1",
-      category2: "showCategory2",
-      category3: "showCategory3",
-      category4: "showCategory4",
-      timetaken: "showTimeTaken",
-      chargeType: "showChargeType",
-    };
-    const settingKey = mapping[fieldKey] || "showStartDate";
-    setSettings((prev) => ({ ...prev, [settingKey]: enabled }));
+    const settingKey = FIELD_SETTING_KEY[fieldKey];
+    if (settingKey) setSettings((prev) => ({ ...prev, [settingKey]: enabled }));
   };
 
   const handleTicketTypeSelect = (ticketTypeId: string) => {
@@ -560,7 +502,7 @@ function OptionsPage() {
               <FieldOrderManager
                 fieldOrder={settings.fieldOrder}
                 settings={settings}
-                onMoveField={moveField}
+                onFieldOrderChange={handleFieldOrderChange}
                 onToggleField={handleToggleField}
                 onReset={resetFieldOrder}
               />

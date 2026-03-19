@@ -298,6 +298,7 @@ function TicketForm() {
       // Set field order, migrating any new fields not yet in saved order
       const defaultFieldOrder = [
         "ticketType",
+        "autoAssign",
         "projecttimebudget",
         "startDate",
         "targetDate",
