@@ -463,7 +463,8 @@ function TicketForm() {
       }
 
       const responseData = (await response.json()) as TicketResponse;
-      const ticketUrl = `${settings.apiUrl}/tickets?id=${responseData.id}`;
+      const baseUrl = settings.apiUrl.replace(/\/+$/, "");
+      const ticketUrl = `${baseUrl}/tickets?id=${responseData.id}`;
 
       // Save last ticket info
       const newTicket = { id: responseData.id, url: ticketUrl };
@@ -574,7 +575,8 @@ function TicketForm() {
       }
 
       const responseData = (await response.json()) as TicketResponse;
-      const ticketUrl = `${settings.apiUrl}/tickets?id=${responseData.id}`;
+      const baseUrl = settings.apiUrl.replace(/\/+$/, "");
+      const ticketUrl = `${baseUrl}/tickets?id=${responseData.id}`;
 
       // Save last ticket info
       const newTicket = { id: responseData.id, url: ticketUrl };
