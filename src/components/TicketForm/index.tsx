@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import HaloAuth from "../../services/auth";
 import { HaloUser } from "../../services/userService";
 import { FormData, TicketPayload, TicketResponse, LastTicket, Category, ChargeType, AppState } from "../../types";
@@ -74,6 +74,10 @@ function TicketForm() {
   const [completeButtonText, setCompleteButtonText] = useState("Complete");
 
   const [lastTicket, setLastTicket] = useState<LastTicket | null>(null);
+
+  // Blocks the draft auto-save until the stored draft has been restored,
+  // so the mount-time defaults never overwrite it
+  const draftLoaded = useRef(false);
 
   const [formSettings, setFormSettings] = useState<FormSettings>({
     showTicketType: true,
@@ -265,12 +269,16 @@ function TicketForm() {
         ]),
       ]);
 
-      if (formDataResult.ticketFormData) {
+      // Only restore drafts with actual content - this also discards stale
+      // empty drafts saved by older versions, whose default dates have aged
+      const draft = formDataResult.ticketFormData;
+      if (draft && (draft.summary?.trim() || draft.details?.trim())) {
         setFormData((prevData) => ({
           ...prevData,
-          ...formDataResult.ticketFormData,
+          ...draft,
         }));
       }
+      draftLoaded.current = true;
 
       if (lastTicketResult.lastTicket) {
         setLastTicket(lastTicketResult.lastTicket);
@@ -370,7 +378,18 @@ function TicketForm() {
 
   // Debounce the save operation to avoid too many writes
   useEffect(() => {
+    if (!draftLoaded.current) {
+      return;
+    }
+
     const timeoutId = setTimeout(() => {
+      // Only persist once the user has written a summary or details -
+      // otherwise the default dates get stored and go stale between opens
+      if (!formData.summary.trim() && !formData.details.trim()) {
+        chrome.storage.local.remove("ticketFormData");
+        return;
+      }
+
       chrome.storage.local.set({
         ticketFormData: {
           summary: formData.summary,
