@@ -51,7 +51,7 @@ function ApiConfigStep({ apiUrl, clientId, redirectUri, onChange, onSave }: ApiC
           <li>
             Add Permissions:{" "}
             <span className="text-xs text-gray-500">
-              read:tickets, edit:tickets
+              read:tickets, edit:tickets, read:customers
             </span>
           </li>
           <li>Save the application</li>
