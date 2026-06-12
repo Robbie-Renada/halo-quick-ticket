@@ -6,24 +6,19 @@ interface AuthStepProps {
 function AuthStep({ isCheckingAuth, onLogin }: AuthStepProps) {
   return (
     <div className="max-w-md mx-auto mb-8">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">
-          Authenticate with Halo
-        </h2>
-        <p className="text-gray-600 text-sm mb-6">
-          Now that your basic settings are saved, you need to authenticate
-          with Halo to configure your Halo-specific settings.
+      <div className="hqt-panel text-center">
+        <h2 className="hqt-panel-title mb-2">Authenticate with Halo</h2>
+        <p className="text-stone-500 text-[13px] mb-5">
+          Your API settings are saved. Sign in to Halo to continue
+          configuring the extension.
         </p>
         {isCheckingAuth ? (
-          <div className="flex items-center justify-center space-x-2 text-gray-500">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-            <span className="text-sm">Checking authentication...</span>
+          <div className="flex items-center justify-center space-x-2 text-stone-500">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-stone-200 border-t-teal-700"></div>
+            <span className="text-xs">Checking authentication…</span>
           </div>
         ) : (
-          <button
-            onClick={onLogin}
-            className="bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-md shadow-sm text-sm font-medium transition-colors"
-          >
+          <button type="button" onClick={onLogin} className="hqt-btn-primary px-6">
             Login to Halo
           </button>
         )}

@@ -25,7 +25,7 @@ function UserSearchField({
 }: UserSearchFieldProps) {
   return (
     <div>
-      <label className="block text-gray-500 text-xs font-medium pb-1">
+      <label className="hqt-label">
         User
       </label>
       <div className="relative">
@@ -56,15 +56,15 @@ function UserSearchField({
             }
             setShowUserDropdown(true);
           }}
-          className={`w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors py-1 ${
+          className={`hqt-input py-1 ${
             selectedUser ? "cursor-pointer" : ""
           }`}
         />
 
         {showUserDropdown && !selectedUser && (
-          <div className="user-dropdown absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto mt-1">
+          <div className="user-dropdown hqt-dropdown max-h-40">
             {isLoadingUsers ? (
-              <div className="p-2 text-xs text-gray-500">
+              <div className="p-2 text-xs text-stone-500">
                 Loading users...
               </div>
             ) : availableUsers.length > 0 ? (
@@ -79,16 +79,16 @@ function UserSearchField({
                   <div
                     key={user.id}
                     onClick={() => onSelect(user)}
-                    className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-b-0 transition-colors"
+                    className="hqt-dropdown-item"
                   >
-                    <div className="text-xs font-medium text-gray-900">
+                    <div className="text-xs font-medium text-stone-900">
                       {compactDisplay}
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="p-2 text-xs text-gray-500">
+              <div className="p-2 text-xs text-stone-500">
                 No users found
               </div>
             )}

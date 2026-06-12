@@ -815,16 +815,22 @@ function TicketForm() {
   // App is ready - show the ticket form
   return (
     <div className="w-full max-w-lg text-sm">
-      <form onSubmit={handleSubmit} className="flex flex-col space-y-3 p-3">
-        <div className="flex justify-between items-center pb-2 mb-1 border-b border-gray-100">
-          <h1 className="text-sm font-semibold text-gray-800">Create a ticket</h1>
+      <form onSubmit={handleSubmit} className="flex flex-col space-y-2.5 p-3">
+        <div className="flex justify-between items-center pb-2 border-b border-stone-200">
+          <div className="flex items-center gap-2">
+            <span className="hqt-mark h-3.5 w-3.5 shrink-0" />
+            <h1 className="text-sm font-semibold tracking-tight text-stone-900">
+              New ticket
+            </h1>
+          </div>
           {lastTicket && (
             <a
               href={lastTicket.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full transition-colors"
+              className="inline-flex items-center gap-1 rounded-md border border-stone-300 bg-white px-2 py-1 text-[11px] font-medium text-stone-600 shadow-sm transition-colors hover:border-teal-700/40 hover:bg-teal-50 hover:text-teal-800"
             >
+              Last ticket
               <svg
                 className="w-3 h-3"
                 fill="none"
@@ -838,7 +844,6 @@ function TicketForm() {
                   d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                 />
               </svg>
-              Last ticket
             </a>
           )}
         </div>
@@ -863,18 +868,15 @@ function TicketForm() {
         )}
 
         <div>
-          <label
-            htmlFor="summary"
-            className="block text-gray-500 text-xs font-medium pb-1"
-          >
+          <label htmlFor="summary" className="hqt-label">
             Summary
           </label>
           <input
             type="text"
             tabIndex={1}
             id="summary"
-            className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors py-1"
-            placeholder="Brief Task Description"
+            className="hqt-input text-sm font-medium"
+            placeholder="Brief task description"
             value={formData.summary}
             onChange={(e) =>
               setFormData((prev) => ({ ...prev, summary: e.target.value }))
@@ -882,17 +884,14 @@ function TicketForm() {
           />
         </div>
         <div className="flex-grow">
-          <label
-            htmlFor="details"
-            className="block text-gray-500 text-xs font-medium pb-1"
-          >
+          <label htmlFor="details" className="hqt-label">
             Details
           </label>
           <textarea
             tabIndex={2}
             id="details"
-            className="h-full min-h-[70px] w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors py-1"
-            placeholder="Additional Task Information"
+            className="hqt-input h-full min-h-[60px]"
+            placeholder="Additional task information"
             value={formData.details}
             onChange={(e) =>
               setFormData((prev) => ({ ...prev, details: e.target.value }))
@@ -901,8 +900,8 @@ function TicketForm() {
         </div>
 
         {/* All fields in 2-column grid respecting fieldOrder */}
-        <div className="border-t border-gray-100 pt-2"></div>
-        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+        <div className="border-t border-stone-200 pt-1"></div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
           <FormFields
             fieldOrder={fieldOrder}
             formData={formData}
@@ -919,7 +918,7 @@ function TicketForm() {
         </div>
 
         <div
-          className={`flex gap-2 mt-2 ${!formSettings.allowCompleteTickets ? "justify-center" : ""}`}
+          className={`flex gap-2 mt-1 ${!formSettings.allowCompleteTickets ? "justify-center" : ""}`}
         >
           <button
             type="submit"
@@ -927,11 +926,11 @@ function TicketForm() {
             disabled={submitButtonText !== "Submit"}
             className={`${
               submitButtonText === "Success!"
-                ? "bg-green-500 hover:bg-green-600 shadow-green-200"
+                ? "rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm"
                 : submitButtonText === "Submitting..."
-                  ? "bg-gray-400"
-                  : "bg-blue-500 hover:bg-blue-600 shadow-blue-200"
-            } text-white font-medium px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ${
+                  ? "rounded-md bg-stone-300 px-4 py-2 text-sm font-medium text-stone-500"
+                  : "hqt-btn-primary"
+            } transition-colors duration-100 ${
               formSettings.allowCompleteTickets ? "flex-1" : "w-full"
             }`}
           >
@@ -945,11 +944,11 @@ function TicketForm() {
               onClick={handleComplete}
               className={`${
                 completeButtonText === "Success!"
-                  ? "bg-green-500 hover:bg-green-600 shadow-green-200"
+                  ? "rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm"
                   : completeButtonText === "Completing..."
-                    ? "bg-gray-400"
-                    : "bg-purple-500 hover:bg-purple-600 shadow-purple-200"
-              } text-white font-medium px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex-1`}
+                    ? "rounded-md bg-stone-300 px-4 py-2 text-sm font-medium text-stone-500"
+                    : "hqt-btn-secondary"
+              } transition-colors duration-100 flex-1`}
             >
               {completeButtonText}
             </button>
@@ -957,7 +956,7 @@ function TicketForm() {
         </div>
         {status.message && (
           <div
-            className={`text-xs px-3 py-2 rounded-lg ${status.type === "error" ? "text-red-700 bg-red-50 border border-red-100" : "text-green-700 bg-green-50 border border-green-100"}`}
+            className={`text-xs px-3 py-2 rounded-md border ${status.type === "error" ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}
             dangerouslySetInnerHTML={{ __html: status.message }}
           />
         )}

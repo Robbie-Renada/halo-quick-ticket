@@ -92,10 +92,10 @@ function SortableFieldItem({
       style={isDragOverlay ? undefined : style}
       className={`flex items-center justify-between p-2 rounded-md border transition-colors ${
         isDragOverlay
-          ? "bg-blue-50 border-blue-300 shadow-lg rotate-1 scale-105"
+          ? "border-teal-700/40 bg-white shadow-lg rotate-1 scale-105"
           : enabled
-            ? "bg-gray-50 border-gray-200 hover:bg-gray-100"
-            : "bg-white border-gray-100 opacity-50"
+            ? "border-stone-200 bg-stone-50 hover:border-stone-300 hover:bg-stone-100"
+            : "border-stone-100 bg-white opacity-50"
       }`}
     >
       <div className="flex items-center flex-1 min-w-0">
@@ -104,25 +104,25 @@ function SortableFieldItem({
           id={isDragOverlay ? undefined : `field-${fieldKey}`}
           checked={enabled}
           onChange={(e) => onToggle(fieldKey, e.target.checked)}
-          className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mr-3 shrink-0"
+          className="hqt-check mr-3 shrink-0"
         />
         <label
           htmlFor={isDragOverlay ? undefined : `field-${fieldKey}`}
           className={`text-sm font-medium cursor-pointer truncate ${
-            enabled ? "text-gray-700" : "text-gray-400"
+            enabled ? "text-stone-700" : "text-stone-400"
           }`}
         >
           {FIELD_LABELS[fieldKey] ?? fieldKey}
         </label>
       </div>
       <div className="flex items-center space-x-2 ml-2 shrink-0">
-        <span className="text-xs text-gray-400">#{index + 1}</span>
+        <span className="text-[11px] text-stone-400">#{index + 1}</span>
         <div
           {...(enabled ? { ...attributes, ...listeners } : {})}
           className={`p-1 rounded ${
             enabled
-              ? "cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 hover:bg-gray-200"
-              : "text-gray-200 cursor-not-allowed"
+              ? "cursor-grab active:cursor-grabbing text-stone-400 hover:text-stone-600 hover:bg-stone-200"
+              : "text-stone-200 cursor-not-allowed"
           }`}
           title={enabled ? "Drag to reorder" : "Enable field to reorder"}
         >
@@ -165,11 +165,9 @@ function FieldOrderManager({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-fit">
-      <h2 className="text-lg font-semibold text-gray-800 mb-3">
-        Form Fields & Order
-      </h2>
-      <p className="text-xs text-gray-500 mb-4">
+    <div className="hqt-panel h-fit">
+      <h2 className="hqt-panel-title mb-1.5">Form Fields & Order</h2>
+      <p className="text-xs text-stone-500 mb-4">
         Check to enable fields and drag to reorder. Only enabled fields will
         appear in the form.
       </p>
@@ -213,7 +211,7 @@ function FieldOrderManager({
       <button
         type="button"
         onClick={onReset}
-        className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-3 rounded-md shadow-sm text-sm font-medium transition-colors w-full"
+        className="hqt-btn-secondary w-full text-sm"
       >
         Reset to Default Order
       </button>

@@ -12,38 +12,35 @@ function UnauthenticatedScreen({
   onRefresh,
 }: UnauthenticatedScreenProps) {
   return (
-    <div className="w-full min-h-[470px] bg-white text-sm flex flex-col items-center justify-center">
+    <div className="w-full min-h-[470px] text-sm flex flex-col items-center justify-center">
       <div className="flex flex-col items-center justify-center p-6 text-center">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">
-          Authentication Required
+        <span className="hqt-mark mb-4 h-8 w-8" />
+        <h2 className="text-base font-semibold tracking-tight text-stone-900 mb-1.5">
+          Sign in to Halo
         </h2>
-        <p className="text-gray-600 mb-4">
-          Please log in to your Halo account to create tickets.
+        <p className="text-stone-500 text-[13px] mb-5 max-w-[260px]">
+          Log in to your Halo account to start creating tickets.
         </p>
         {authError && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
-            <p className="text-red-700 text-sm">{authError}</p>
+          <div className="mb-5 max-w-[280px] rounded-md border border-red-200 bg-red-50 p-3">
+            <p className="text-red-700 text-xs">{authError}</p>
           </div>
         )}
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onLogin}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm transition-colors duration-200"
-          >
+          <button type="button" onClick={onLogin} className="hqt-btn-primary">
             Login to Halo
           </button>
           <button
             type="button"
             onClick={onOpenSettings}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md shadow-sm transition-colors duration-200"
+            className="hqt-btn-secondary"
           >
             Check Settings
           </button>
           <button
             type="button"
             onClick={onRefresh}
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md shadow-sm transition-colors duration-200"
+            className="hqt-btn-secondary"
             title="Refresh status"
           >
             <svg

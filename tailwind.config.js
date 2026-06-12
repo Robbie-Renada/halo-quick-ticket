@@ -14,6 +14,7 @@ export default {
       ping: "ping 1s cubic-bezier(0, 0, 0.2, 1) infinite",
       pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       bounce: "bounce 1s infinite",
+      "scale-in": "scale-in 0.12s cubic-bezier(0.16, 1, 0.3, 1) both",
     },
     aria: {
       busy: 'busy="true"',
@@ -306,6 +307,7 @@ export default {
     },
     fontFamily: {
       sans: [
+        '"Instrument Sans Variable"',
         "ui-sans-serif",
         "system-ui",
         "sans-serif",
@@ -604,6 +606,10 @@ export default {
           transform: "none",
           animationTimingFunction: "cubic-bezier(0,0,0.2,1)",
         },
+      },
+      "scale-in": {
+        from: { opacity: "0", transform: "scale(0.98) translateY(-2px)" },
+        to: { opacity: "1", transform: "scale(1) translateY(0)" },
       },
     },
     letterSpacing: {

@@ -34,17 +34,12 @@ function UserConfigPanel({
   onUserClear,
 }: UserConfigPanelProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-      <h2 className="text-lg font-semibold text-gray-800 mb-3">
-        User Configuration
-      </h2>
+    <div className="hqt-panel">
+      <h2 className="hqt-panel-title mb-3">User Configuration</h2>
       <div className="space-y-4">
         <div>
-          <label
-            htmlFor="selectedUser"
-            className="block text-gray-700 text-sm font-medium mb-1"
-          >
-            Default User: <span className="text-red-500">*</span>
+          <label htmlFor="selectedUser" className="hqt-label">
+            Default User <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -75,15 +70,15 @@ function UserConfigPanel({
                 }
                 setShowUserDropdown(true);
               }}
-              className={`w-full border-gray-300 rounded-md shadow-sm text-sm ${
+              className={`hqt-input text-sm ${
                 selectedUser ? "cursor-pointer" : ""
               }`}
             />
 
             {showUserDropdown && !selectedUser && (
-              <div className="user-dropdown absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
+              <div className="user-dropdown hqt-dropdown max-h-40">
                 {isLoadingUsers ? (
-                  <div className="p-2 text-sm text-gray-500">
+                  <div className="p-2 text-sm text-stone-500">
                     Loading users...
                   </div>
                 ) : availableUsers.length > 0 ? (
@@ -98,16 +93,16 @@ function UserConfigPanel({
                       <div
                         key={user.id}
                         onClick={() => handleUserSelect(user)}
-                        className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        className="hqt-dropdown-item"
                       >
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-stone-900">
                           {compactDisplay}
                         </div>
                       </div>
                     );
                   })
                 ) : (
-                  <div className="p-2 text-sm text-gray-500">
+                  <div className="p-2 text-sm text-stone-500">
                     No users found
                   </div>
                 )}
@@ -117,18 +112,15 @@ function UserConfigPanel({
         </div>
 
         <div>
-          <label
-            htmlFor="ticketTypeId"
-            className="block text-gray-700 text-sm font-medium mb-1"
-          >
-            Ticket Type: <span className="text-red-500">*</span>
+          <label htmlFor="ticketTypeId" className="hqt-label">
+            Ticket Type <span className="text-red-500">*</span>
           </label>
           <select
             id="ticketTypeId"
             name="ticketTypeId"
             value={ticketTypeId}
             onChange={(e) => onTicketTypeSelect(e.target.value)}
-            className="w-full border-gray-300 rounded-md shadow-sm text-sm"
+            className="hqt-input text-sm"
             disabled={isLoadingTicketTypes}
           >
             <option value="">

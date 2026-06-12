@@ -6,48 +6,82 @@ interface SetupStepperProps {
   hasApiConfig: boolean;
 }
 
+type StepState = "done" | "active" | "pending";
+
+function Step({
+  index,
+  label,
+  state,
+}: {
+  index: number;
+  label: string;
+  state: StepState;
+}) {
+  return (
+    <div className="flex items-center">
+      <div
+        className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-medium transition-colors ${
+          state === "done"
+            ? "border-teal-700 bg-teal-700 text-white"
+            : state === "active"
+              ? "border-teal-700 bg-white text-teal-800"
+              : "border-stone-300 bg-white text-stone-400"
+        }`}
+      >
+        {state === "done" ? (
+          <svg
+            className="h-3.5 w-3.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2.5}
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+        ) : (
+          index
+        )}
+      </div>
+      <span
+        className={`ml-2 text-xs font-medium ${
+          state === "pending" ? "text-stone-400" : "text-stone-700"
+        }`}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
 function SetupStepper({ currentStep, isAuthenticated, hasApiConfig }: SetupStepperProps) {
+  const apiState: StepState = hasApiConfig
+    ? "done"
+    : currentStep === "basic"
+      ? "active"
+      : "pending";
+  const authState: StepState = isAuthenticated
+    ? "done"
+    : currentStep === "auth"
+      ? "active"
+      : "pending";
+  const configState: StepState = isAuthenticated ? "active" : "pending";
+
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-center space-x-8">
+      <div className="flex items-center justify-center space-x-5">
+        <Step index={1} label="API Configuration" state={apiState} />
         <div
-          className={`flex items-center ${hasApiConfig ? "text-green-600" : currentStep === "basic" ? "text-blue-600" : "text-gray-400"}`}
-        >
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${hasApiConfig ? "border-green-600 bg-green-50" : currentStep === "basic" ? "border-blue-600 bg-blue-50" : "border-gray-300"}`}
-          >
-            {hasApiConfig ? "✓" : "⚙️"}
-          </div>
-          <span className="ml-2 text-sm font-medium">
-            API Configuration
-          </span>
-        </div>
+          className={`h-px w-12 ${hasApiConfig ? "bg-teal-700" : "bg-stone-300"}`}
+        />
+        <Step index={2} label="Authentication" state={authState} />
         <div
-          className={`w-12 h-0.5 ${isAuthenticated ? "bg-green-600" : hasApiConfig ? "bg-blue-600" : "bg-gray-300"}`}
-        ></div>
-        <div
-          className={`flex items-center ${isAuthenticated ? "text-green-600" : currentStep === "auth" ? "text-blue-600" : "text-gray-400"}`}
-        >
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${isAuthenticated ? "border-green-600 bg-green-50" : currentStep === "auth" ? "border-blue-600 bg-blue-50" : "border-gray-300"}`}
-          >
-            {isAuthenticated ? "✓" : "🔑"}
-          </div>
-          <span className="ml-2 text-sm font-medium">Authentication</span>
-        </div>
-        <div
-          className={`w-12 h-0.5 ${isAuthenticated ? "bg-green-600" : "bg-gray-300"}`}
-        ></div>
-        <div
-          className={`flex items-center ${isAuthenticated ? "text-blue-600" : "text-gray-400"}`}
-        >
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${isAuthenticated ? "border-blue-600 bg-blue-50" : "border-gray-300"}`}
-          >
-            📋
-          </div>
-          <span className="ml-2 text-sm font-medium">Configuration</span>
-        </div>
+          className={`h-px w-12 ${isAuthenticated ? "bg-teal-700" : "bg-stone-300"}`}
+        />
+        <Step index={3} label="Configuration" state={configState} />
       </div>
     </div>
   );

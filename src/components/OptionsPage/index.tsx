@@ -419,11 +419,19 @@ function OptionsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">
-          Quick Ticket Settings
-        </h1>
+    <div className="min-h-screen px-6 py-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8 flex items-center gap-3">
+          <span className="hqt-mark h-6 w-6 shrink-0" />
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-stone-900">
+              Quick Ticket
+            </h1>
+            <p className="text-[13px] text-stone-500">
+              Settings for your Halo connection and ticket form
+            </p>
+          </div>
+        </div>
 
         {/* Setup Status */}
         <SetupStepper
@@ -453,30 +461,42 @@ function OptionsPage() {
 
         {/* Halo Configuration */}
         {currentStep === "advanced" && isAuthenticated && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - User and Ticket Type */}
-            <div className="lg:col-span-1 space-y-6">
-              {/* Authentication Status */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+            {/* Left Column - Connection and defaults */}
+            <div className="space-y-5">
+            {/* Authentication Status */}
+            <div className="hqt-panel flex items-center justify-between !py-4">
                 <div className="flex items-center">
-                  <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-white text-xs">✓</span>
+                  <div className="mr-3 flex h-6 w-6 items-center justify-center rounded-full bg-teal-700">
+                    <svg
+                      className="h-3.5 w-3.5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
                   </div>
                   <div>
-                    <p className="text-green-800 font-medium text-sm">
-                      Authenticated
+                    <p className="text-sm font-medium text-stone-900">
+                      Connected to Halo
                     </p>
-                    <p className="text-green-600 text-xs">
-                      Connected to Halo successfully
+                    <p className="text-xs text-stone-500">
+                      Authentication is active
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="mt-3 text-xs bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded transition-colors"
+                  className="rounded-md px-2.5 py-1 text-xs font-medium text-stone-500 transition-colors hover:bg-red-50 hover:text-red-700"
                 >
-                  Logout
+                  Log out
                 </button>
               </div>
 
@@ -498,25 +518,21 @@ function OptionsPage() {
             </div>
 
             {/* Middle Column - Form Fields & Order */}
-            <div className="lg:col-span-1">
-              <FieldOrderManager
-                fieldOrder={settings.fieldOrder}
-                settings={settings}
-                onFieldOrderChange={handleFieldOrderChange}
-                onToggleField={handleToggleField}
-                onReset={resetFieldOrder}
-              />
-            </div>
+            <FieldOrderManager
+              fieldOrder={settings.fieldOrder}
+              settings={settings}
+              onFieldOrderChange={handleFieldOrderChange}
+              onToggleField={handleToggleField}
+              onReset={resetFieldOrder}
+            />
 
             {/* Right Column - Advanced Options */}
-            <div className="lg:col-span-1 space-y-6">
-              <AdvancedOptionsPanel
-                allowUserSelection={settings.allowUserSelection}
-                allowCompleteTickets={settings.allowCompleteTickets}
-                autoAssignToMe={settings.autoAssignToMe}
-                onChange={handleCheckboxChange}
-              />
-            </div>
+            <AdvancedOptionsPanel
+              allowUserSelection={settings.allowUserSelection}
+              allowCompleteTickets={settings.allowCompleteTickets}
+              autoAssignToMe={settings.autoAssignToMe}
+              onChange={handleCheckboxChange}
+            />
           </div>
         )}
 
@@ -548,10 +564,10 @@ function OptionsPage() {
         {status && (
           <div className="fixed bottom-20 right-4 z-50">
             <div
-              className={`px-4 py-2 rounded-md shadow-lg text-sm font-medium ${
+              className={`animate-scale-in rounded-md border px-4 py-2 text-sm font-medium shadow-lg ${
                 status.includes("Error") || status.includes("failed")
-                  ? "bg-red-100 border border-red-200 text-red-800"
-                  : "bg-green-100 border border-green-200 text-green-800"
+                  ? "border-red-200 bg-white text-red-700"
+                  : "border-stone-200 bg-white text-stone-800"
               }`}
             >
               {status}

@@ -11,13 +11,13 @@ function CategorySelect({ typeId, value, onChange, label, categories }: Category
 
   return (
     <div>
-      <label className="block text-gray-500 text-xs font-medium pb-1">
+      <label className="hqt-label">
         {label}
       </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
+        className="hqt-input"
         title={label}
       >
         <option value="">Select {label}</option>

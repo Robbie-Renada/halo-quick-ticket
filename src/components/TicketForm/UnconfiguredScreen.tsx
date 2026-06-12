@@ -5,12 +5,13 @@ interface UnconfiguredScreenProps {
 
 function UnconfiguredScreen({ onOpenSettings, onRefresh }: UnconfiguredScreenProps) {
   return (
-    <div className="w-full min-h-[470px] bg-white text-sm flex flex-col items-center justify-center">
+    <div className="w-full min-h-[470px] text-sm flex flex-col items-center justify-center">
       <div className="flex flex-col items-center justify-center p-6 text-center">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">
-          Extension Setup Required
+        <span className="hqt-mark mb-4 h-8 w-8" />
+        <h2 className="text-base font-semibold tracking-tight text-stone-900 mb-1.5">
+          Welcome to Quick Ticket
         </h2>
-        <p className="text-gray-600 mb-4">
+        <p className="text-stone-500 text-[13px] mb-5 max-w-[260px]">
           Before you can create tickets, you need to configure your Halo
           settings.
         </p>
@@ -18,14 +19,14 @@ function UnconfiguredScreen({ onOpenSettings, onRefresh }: UnconfiguredScreenPro
           <button
             type="button"
             onClick={onOpenSettings}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm transition-colors duration-200"
+            className="hqt-btn-primary"
           >
             Open Settings
           </button>
           <button
             type="button"
             onClick={onRefresh}
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md shadow-sm transition-colors duration-200"
+            className="hqt-btn-secondary"
             title="Refresh status"
           >
             <svg

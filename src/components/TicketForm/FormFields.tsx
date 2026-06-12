@@ -97,7 +97,7 @@ function FormFields({
             <div key={fieldKey}>
               <label
                 htmlFor="projecttimebudget"
-                className="block text-gray-500 text-xs font-medium pb-1"
+                className="hqt-label"
               >
                 Time Budget
               </label>
@@ -105,7 +105,7 @@ function FormFields({
                 type="time"
                 tabIndex={3}
                 id="projecttimebudget"
-                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
+                className="hqt-input"
                 value={formData.projecttimebudget}
                 onChange={(e) => {
                   const [hours, minutes] = e.target.value.split(":");
@@ -117,24 +117,24 @@ function FormFields({
               <div className="w-full flex pt-0.5 gap-1">
                 <button
                   type="button"
-                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/3 hover:bg-gray-100 transition-colors"
+                  className="hqt-chip flex-1"
                   onClick={() => HandleAddTimeButton(0.25, formData.projecttimebudget, onFormDataChange)}
                 >
-                  + 15 Minutes
+                  +15 min
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/3 hover:bg-gray-100 transition-colors"
+                  className="hqt-chip flex-1"
                   onClick={() => HandleTimeButton(1, onFormDataChange)}
                 >
-                  1 Hour
+                  1 hr
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/3 hover:bg-gray-100 transition-colors"
+                  className="hqt-chip flex-1"
                   onClick={() => HandleTimeButton(2, onFormDataChange)}
                 >
-                  2 Hours
+                  2 hrs
                 </button>
               </div>
             </div>
@@ -147,7 +147,7 @@ function FormFields({
             <div key={fieldKey}>
               <label
                 htmlFor="startdate"
-                className="block text-gray-500 text-xs font-medium pb-1"
+                className="hqt-label"
               >
                 Start Date
               </label>
@@ -159,19 +159,19 @@ function FormFields({
                 onChange={(e) =>
                   onFormDataChange({ startDate: e.target.value })
                 }
-                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
+                className="hqt-input"
               />
               <div className="w-full flex pt-0.5 gap-1">
                 <button
                   type="button"
-                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/2 hover:bg-gray-100 transition-colors"
+                  className="hqt-chip flex-1"
                   onClick={() => HandleDateButton("start", 0, onFormDataChange)}
                 >
                   Today
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/2 hover:bg-gray-100 transition-colors"
+                  className="hqt-chip flex-1"
                   onClick={() => HandleDateButton("start", 1, onFormDataChange)}
                 >
                   Tomorrow
@@ -187,7 +187,7 @@ function FormFields({
             <div key={fieldKey}>
               <label
                 htmlFor="targetdate"
-                className="block text-gray-500 text-xs font-medium pb-1"
+                className="hqt-label"
               >
                 Target Date
               </label>
@@ -199,26 +199,26 @@ function FormFields({
                 onChange={(e) =>
                   onFormDataChange({ targetDate: e.target.value })
                 }
-                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
+                className="hqt-input"
               />
               <div className="w-full flex pt-0.5 gap-1">
                 <button
                   type="button"
-                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/2 hover:bg-gray-100 transition-colors"
+                  className="hqt-chip flex-1"
                   onClick={() => HandleDateButton("target", 0, onFormDataChange)}
                 >
                   Today
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/2 hover:bg-gray-100 transition-colors"
+                  className="hqt-chip flex-1"
                   onClick={() => HandleDateButton("target", 1, onFormDataChange)}
                 >
                   Tomorrow
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/2 hover:bg-gray-100 transition-colors"
+                  className="hqt-chip flex-1"
                   onClick={() => HandleDateButton("target", 7, onFormDataChange)}
                 >
                   Next Week
@@ -232,7 +232,7 @@ function FormFields({
         return (
           formSettings.showPriority && (
             <div key={fieldKey}>
-              <label className="block text-gray-500 text-xs font-medium pb-1">
+              <label className="hqt-label">
                 Priority
               </label>
               <select
@@ -241,7 +241,7 @@ function FormFields({
                 onChange={(e) =>
                   onFormDataChange({ priority_id: e.target.value })
                 }
-                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
+                className="hqt-input"
               >
                 <option value="">Select Priority</option>
                 {PRIORITY_OPTIONS.map((option) => (
@@ -324,7 +324,7 @@ function FormFields({
             <div key={fieldKey}>
               <label
                 htmlFor="timetaken"
-                className="block text-gray-500 text-xs font-medium pb-1"
+                className="hqt-label"
               >
                 Time Taken
               </label>
@@ -332,7 +332,7 @@ function FormFields({
                 type="time"
                 tabIndex={3}
                 id="timetaken"
-                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
+                className="hqt-input"
                 value={formData.timetaken}
                 onChange={(e) => {
                   const [hours, minutes] = e.target.value.split(":");
@@ -344,7 +344,7 @@ function FormFields({
               <div className="w-full flex pt-0.5 gap-1">
                 <button
                   type="button"
-                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/3 hover:bg-gray-100 transition-colors"
+                  className="hqt-chip flex-1"
                   onClick={() => {
                     const [hours, minutes] = formData.timetaken.split(":");
                     const currentTime = new Date();
@@ -358,29 +358,29 @@ function FormFields({
                     onFormDataChange({ timetaken: formatTime(currentTime) });
                   }}
                 >
-                  + 15 Minutes
+                  +15 min
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/3 hover:bg-gray-100 transition-colors"
+                  className="hqt-chip flex-1"
                   onClick={() => {
                     const newTime = new Date();
                     newTime.setHours(1, 0, 0, 0);
                     onFormDataChange({ timetaken: formatTime(newTime) });
                   }}
                 >
-                  1 Hour
+                  1 hr
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-50 text-gray-600 border border-gray-200 rounded-full text-xs py-0.5 w-1/3 hover:bg-gray-100 transition-colors"
+                  className="hqt-chip flex-1"
                   onClick={() => {
                     const newTime = new Date();
                     newTime.setHours(2, 0, 0, 0);
                     onFormDataChange({ timetaken: formatTime(newTime) });
                   }}
                 >
-                  2 Hours
+                  2 hrs
                 </button>
               </div>
             </div>
@@ -391,7 +391,7 @@ function FormFields({
         return (
           formSettings.showChargeType && (
             <div key={fieldKey}>
-              <label className="block text-gray-500 text-xs font-medium pb-1">
+              <label className="hqt-label">
                 Charge Type
               </label>
               <select
@@ -400,7 +400,7 @@ function FormFields({
                 onChange={(e) =>
                   onFormDataChange({ chargeType: e.target.value })
                 }
-                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
+                className="hqt-input"
               >
                 <option value="">Select Charge Type</option>
                 {chargeTypes.map((chargeType) => (
@@ -417,14 +417,14 @@ function FormFields({
         return (
           formSettings.showTicketType && (
             <div key={fieldKey}>
-              <label className="block text-gray-500 text-xs font-medium pb-1">
+              <label className="hqt-label">
                 Ticket Type
               </label>
               <select
                 title="Ticket Type"
                 value={selectedTicketTypeId}
                 onChange={(e) => onTicketTypeChange(e.target.value)}
-                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
+                className="hqt-input"
               >
                 <option value="">Select Ticket Type</option>
                 {ticketTypes.map((tt) => (
@@ -441,14 +441,14 @@ function FormFields({
         return (
           formSettings.showAutoAssign && (
             <div key={fieldKey}>
-              <label className="block text-gray-500 text-xs font-medium pb-1">
+              <label className="hqt-label">
                 Assign to Me
               </label>
               <select
                 title="Assign to Me"
                 value={autoAssignToMe ? "yes" : "no"}
                 onChange={(e) => onAutoAssignChange(e.target.value === "yes")}
-                className="w-full bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-xs transition-colors"
+                className="hqt-input"
               >
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
