@@ -5,6 +5,8 @@ export interface HaloSettings {
   clientId: string;
   selectedUser: import("../services/userService").HaloUser | null;
   ticketTypeId: string;
+  restrictTicketTypes: boolean;
+  allowedTicketTypeIds: string[];
   showTicketType: boolean;
   showAutoAssign: boolean;
   showStartDate: boolean;
