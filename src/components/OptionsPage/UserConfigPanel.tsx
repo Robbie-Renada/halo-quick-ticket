@@ -1,5 +1,6 @@
 import UserService, { HaloUser } from "../../services/userService";
 import { TicketType } from "../../types";
+import TicketTypeCombobox from "../TicketTypeCombobox";
 
 interface UserConfigPanelProps {
   selectedUser: HaloUser | null;
@@ -115,31 +116,18 @@ function UserConfigPanel({
           <label htmlFor="ticketTypeId" className="hqt-label">
             Ticket Type <span className="text-red-500">*</span>
           </label>
-          <select
+          <TicketTypeCombobox
             id="ticketTypeId"
-            name="ticketTypeId"
+            ticketTypes={ticketTypes}
             value={ticketTypeId}
-            onChange={(e) => onTicketTypeSelect(e.target.value)}
-            className="hqt-input text-sm"
+            onChange={onTicketTypeSelect}
+            placeholder={isLoadingTicketTypes ? "Loading..." : "Search ticket types..."}
             disabled={isLoadingTicketTypes}
-          >
-            <option value="">
-              {isLoadingTicketTypes
-                ? "Loading..."
-                : "Select Ticket Type"}
-            </option>
-            {ticketTypes.map((ticketType) => (
-              <option
-                key={ticketType.id}
-                value={ticketType.id.toString()}
-              >
-                {ticketType.name}
-              </option>
-            ))}
-          </select>
+            className="hqt-input text-sm"
+            itemClassName="text-sm"
+          />
         </div>
 
-        {/* Remove the save button from here */}
       </div>
     </div>
   );

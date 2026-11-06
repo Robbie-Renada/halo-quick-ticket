@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import HaloAuth from "../../services/auth";
 import { HaloUser } from "../../services/userService";
 import { FormData, TicketPayload, TicketResponse, LastTicket, Category, ChargeType, AppState } from "../../types";
@@ -124,6 +124,20 @@ function TicketForm() {
   const [selectedUser, setSelectedUser] = useState<HaloUser | null>(null);
 
   const { ticketTypes, fetchTicketTypes } = useTicketTypes();
+
+  // Optional restriction of the ticket type list, set on the options page
+  const [ticketTypeFilter, setTicketTypeFilter] = useState<{
+    restrict: boolean;
+    allowedIds: string[];
+    defaultId: string;
+  }>({ restrict: false, allowedIds: [], defaultId: "" });
+
+  const visibleTicketTypes = useMemo(() => {
+    if (!ticketTypeFilter.restrict) return ticketTypes;
+    const allowed = new Set(ticketTypeFilter.allowedIds);
+    if (ticketTypeFilter.defaultId) allowed.add(ticketTypeFilter.defaultId);
+    return ticketTypes.filter((tt) => allowed.has(tt.id.toString()));
+  }, [ticketTypes, ticketTypeFilter]);
 
   const {
     userSearch,
@@ -266,6 +280,8 @@ function TicketForm() {
           "fieldOrder",
           "selectedUser",
           "ticketTypeId",
+          "restrictTicketTypes",
+          "allowedTicketTypeIds",
         ]),
       ]);
 
@@ -302,6 +318,11 @@ function TicketForm() {
 
       // Set default ticket type from settings
       setSelectedTicketTypeId(settings.ticketTypeId || "");
+      setTicketTypeFilter({
+        restrict: settings.restrictTicketTypes ?? false,
+        allowedIds: settings.allowedTicketTypeIds ?? [],
+        defaultId: settings.ticketTypeId || "",
+      });
 
       // Set field order, migrating any new fields not yet in saved order
       const defaultFieldOrder = [
@@ -908,7 +929,7 @@ function TicketForm() {
             formSettings={formSettings}
             categories={categories}
             chargeTypes={chargeTypes}
-            ticketTypes={ticketTypes}
+            ticketTypes={visibleTicketTypes}
             selectedTicketTypeId={selectedTicketTypeId}
             autoAssignToMe={autoAssignToMe}
             onFormDataChange={(updates) => setFormData((prev) => ({ ...prev, ...updates }))}

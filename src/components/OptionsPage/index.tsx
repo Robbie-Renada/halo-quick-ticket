@@ -10,6 +10,7 @@ import AuthStep from "./AuthStep";
 import UserConfigPanel from "./UserConfigPanel";
 import FieldOrderManager, { FIELD_SETTING_KEY } from "./FieldOrderManager";
 import AdvancedOptionsPanel from "./AdvancedOptionsPanel";
+import TicketTypeRestrictionPanel from "./TicketTypeRestrictionPanel";
 import SaveBar from "./SaveBar";
 
 const DEFAULT_SETTINGS: HaloSettings = {
@@ -17,6 +18,8 @@ const DEFAULT_SETTINGS: HaloSettings = {
   clientId: "",
   selectedUser: null,
   ticketTypeId: "",
+  restrictTicketTypes: false,
+  allowedTicketTypeIds: [],
   showTicketType: true,
   showAutoAssign: true,
   showStartDate: true,
@@ -147,6 +150,10 @@ function OptionsPage() {
         "clientId",
         "selectedUser",
         "ticketTypeId",
+        "restrictTicketTypes",
+        "allowedTicketTypeIds",
+        "showTicketType",
+        "showAutoAssign",
         "showStartDate",
         "showTargetDate",
         "showTimeBudget",
@@ -168,6 +175,8 @@ function OptionsPage() {
         clientId: result.clientId || "",
         selectedUser: result.selectedUser || null,
         ticketTypeId: result.ticketTypeId || "",
+        restrictTicketTypes: result.restrictTicketTypes ?? false,
+        allowedTicketTypeIds: result.allowedTicketTypeIds ?? [],
         showTicketType: result.showTicketType ?? true,
         showAutoAssign: result.showAutoAssign ?? true,
         showStartDate: result.showStartDate ?? true,
@@ -514,6 +523,20 @@ function OptionsPage() {
                 handleUserSearch={handleUserSearch}
                 handleUserSelect={handleUserSelect}
                 onUserClear={handleUserClear}
+              />
+
+              <TicketTypeRestrictionPanel
+                ticketTypes={ticketTypes}
+                isLoadingTicketTypes={isLoadingTicketTypes}
+                restrictTicketTypes={settings.restrictTicketTypes}
+                allowedTicketTypeIds={settings.allowedTicketTypeIds}
+                defaultTicketTypeId={settings.ticketTypeId}
+                onRestrictChange={(restrictTicketTypes) =>
+                  setSettings((prev) => ({ ...prev, restrictTicketTypes }))
+                }
+                onAllowedChange={(allowedTicketTypeIds) =>
+                  setSettings((prev) => ({ ...prev, allowedTicketTypeIds }))
+                }
               />
             </div>
 

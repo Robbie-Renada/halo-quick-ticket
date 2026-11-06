@@ -1,5 +1,6 @@
 import { FormData, ChargeType, TicketType } from "../../types";
 import CategorySelect from "./CategorySelect";
+import TicketTypeCombobox from "../TicketTypeCombobox";
 
 interface FormSettings {
   showTicketType: boolean;
@@ -420,19 +421,12 @@ function FormFields({
               <label className="hqt-label">
                 Ticket Type
               </label>
-              <select
-                title="Ticket Type"
+              <TicketTypeCombobox
+                ticketTypes={ticketTypes}
                 value={selectedTicketTypeId}
-                onChange={(e) => onTicketTypeChange(e.target.value)}
-                className="hqt-input"
-              >
-                <option value="">Select Ticket Type</option>
-                {ticketTypes.map((tt) => (
-                  <option key={tt.id} value={tt.id.toString()}>
-                    {tt.name}
-                  </option>
-                ))}
-              </select>
+                onChange={onTicketTypeChange}
+                placeholder="Search ticket types..."
+              />
             </div>
           )
         );
